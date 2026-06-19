@@ -165,6 +165,7 @@ input[type=range]:disabled{opacity:.5;}
 .forecast-line b{color:#7aab8a;font-weight:500;}
 .forecast-ok{color:#7aab8a;}
 .forecast-bad{color:#a86b6b;}
+.demo-audio{width:100%;margin-top:8px;height:34px;filter:invert(0.85) hue-rotate(70deg) saturate(0.6);}
 .empty{font-size:9px;color:#4a574a;letter-spacing:1px;padding:20px 0;}
 @media (min-width:760px){
   .app{padding-left:24px;padding-right:24px;}
@@ -223,7 +224,7 @@ function initialTracks(){
       id:i+1, title:title, status:"in-progress", vocals:[],
       credits:{guitars:"",lead_vocals:"",background_vocals:"",drums:"",synths:"",bass:"",lyrics:"",music:""},
       instruments:{drums:{weight:25,progress:0},bass:{weight:25,progress:0},guitar:{weight:25,progress:0},synths:{weight:0,progress:0},vocals:{weight:25,progress:0}},
-      locked:{vocals:true}, notes:"", duration:"", bpm:"", key:"", log:[]
+      locked:{vocals:true}, notes:"", duration:"", bpm:"", key:"", demo:"", log:[]
     };
   });
 }
@@ -246,7 +247,7 @@ function normalizeTrack(t,i){
     vocals:Array.isArray(t.vocals)?t.vocals:[],
     credits:Object.assign({},base.credits,t.credits||{}),
     instruments:inst, locked:t.locked||{}, notes:t.notes||"",
-    duration:t.duration||"", bpm:t.bpm||"", key:t.key||"",
+    duration:t.duration||"", bpm:t.bpm||"", key:t.key||"", demo:t.demo||"",
     log:Array.isArray(t.log)?t.log:[]
   };
 }
@@ -279,7 +280,7 @@ function isMeaningful(){
   if(state.targetDate)return true;
   for(var i=0;i<state.tracks.length;i++){
     var t=state.tracks[i];
-    if(t.notes||t.duration||t.bpm||t.key)return true;
+    if(t.notes||t.duration||t.bpm||t.key||t.demo)return true;
     if(t.log&&t.log.length)return true;
     if(t.status!=="in-progress")return true;
     if(t.vocals&&t.vocals.length)return true;
@@ -481,6 +482,7 @@ function metaLineHTML(t){
   if(t.duration)s+='<span class="t-dur">'+esc(t.duration)+'</span>';
   if(t.bpm)s+='<span class="t-dur">'+esc(t.bpm)+' BPM</span>';
   if(t.key)s+='<span class="t-dur">'+esc(t.key)+'</span>';
+  if(t.demo)s+='<span class="t-dur" style="color:#7aab8a">\u25B6 ДЕМО</span>';
   return s;
 }
 
@@ -508,6 +510,8 @@ function detailHTML(t){
     s+='<div class="credit-quick"><button class="credit-quick-btn" data-act="credit-add" data-id="'+t.id+'" data-key="'+k+'" data-name="Jesse Foster">JF</button><button class="credit-quick-btn" data-act="credit-add" data-id="'+t.id+'" data-key="'+k+'" data-name="Aleksandr Simbirskiy">AS</button></div></div>';
   });
   s+='</div></div>';
+  s+='<div><div class="d-section-title">ДЕМО</div><input class="field-input" value="'+escA(t.demo)+'" placeholder="прямая ссылка на аудио (mp3/wav/ogg)" data-inp="demo" data-id="'+t.id+'">';
+  s+='<audio id="audio-'+t.id+'" class="demo-audio" controls preload="none"'+(t.demo?' src="'+escA(t.demo)+'"':'')+'></audio></div>';
   s+='<div><div class="d-section-title">ЖУРНАЛ ИЗМЕНЕНИЙ</div>';
   if(t.log.length){s+='<div class="log-list">';t.log.forEach(function(e,i){s+='<div class="log-entry"><span class="log-date">'+fmtDate(e.date)+'</span><span class="log-text">'+esc(e.text)+'</span><button class="log-del" data-act="log-del" data-id="'+t.id+'" data-idx="'+i+'">✕</button></div>';});s+='</div>';}
   s+='<div class="log-input-row"><input class="field-input" id="logdraft" value="'+escA(logDraft)+'" placeholder="что сделано за сессию..." data-inp="logdraft"><button class="log-add" data-act="log-add" data-id="'+t.id+'">+</button></div></div>';
@@ -712,6 +716,7 @@ root.addEventListener("input",function(e){
   if(inp==="duration"){t.duration=el.value;patchRowMeta(t);patchHeader();save();return;}
   if(inp==="bpm"){t.bpm=el.value;patchRowMeta(t);save();return;}
   if(inp==="key"){t.key=el.value;patchRowMeta(t);save();return;}
+  if(inp==="demo"){t.demo=el.value;var au=document.getElementById("audio-"+id);if(au){if(el.value)au.src=el.value;else au.removeAttribute("src");}patchRowMeta(t);save();return;}
   if(inp==="credit"){t.credits[el.getAttribute("data-key")]=el.value;save();return;}
   if(inp==="notes"){t.notes=el.value;save();return;}
   if(inp==="logdraft"){logDraft=el.value;return;}
