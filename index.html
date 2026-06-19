@@ -15,7 +15,7 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:#0e100e;color:#d4d9d0;font-family:'JetBrains Mono','Courier New',monospace;min-height:100vh;-webkit-text-size-adjust:100%;}
-.app{max-width:760px;margin:0 auto;padding:env(safe-area-inset-top) 16px 80px;}
+.app{max-width:700px;margin:0 auto;padding:env(safe-area-inset-top) 16px 80px;}
 .io-row{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;align-items:center;}
 .io-btn{font-family:inherit;font-size:8px;letter-spacing:2px;padding:5px 10px;border:1px solid #1e241e;background:none;color:#4a574a;cursor:pointer;transition:all .15s;}
 .io-btn:hover{border-color:#4a574a;color:#7aab8a;}
@@ -167,7 +167,7 @@ input[type=range]:disabled{opacity:.5;}
 .forecast-bad{color:#a86b6b;}
 .empty{font-size:9px;color:#4a574a;letter-spacing:1px;padding:20px 0;}
 @media (min-width:760px){
-  .app{padding-left:0;padding-right:0;}
+  .app{padding-left:24px;padding-right:24px;}
   .hdr-title{font-size:26px;letter-spacing:9px;}
   .hdr-sub{font-size:11px;}
   .hdr-stamp{font-size:10px;}
@@ -269,6 +269,68 @@ function save(){
   var today=todayISO();
   if(state.history[today]!==avgProgress())state.history[today]=avgProgress();
   try{localStorage.setItem("formaldehyde_data",JSON.stringify(state));}catch(e){}
+  scheduleCloudSave();
+}
+// ── auto-sync guards ──
+var syncReady=false;       // becomes true only after a successful cloud load/save
+var cloudTimer=null;
+function isMeaningful(){
+  // true if state holds real work — prevents auto-saving a pristine/default (empty) album over cloud
+  if(state.targetDate)return true;
+  for(var i=0;i<state.tracks.length;i++){
+    var t=state.tracks[i];
+    if(t.notes||t.duration||t.bpm||t.key)return true;
+    if(t.log&&t.log.length)return true;
+    if(t.status!=="in-progress")return true;
+    if(t.vocals&&t.vocals.length)return true;
+    var cr=t.credits;for(var k in cr){if(cr[k])return true;}
+    for(var j=0;j<INSTRUMENTS.length;j++){if(t.instruments[INSTRUMENTS[j]].progress>0)return true;}
+  }
+  return false;
+}
+function scheduleCloudSave(){
+  if(!syncReady)return;            // guard 1: never save before a confirmed cloud load
+  if(!cloudToken())return;
+  if(!isMeaningful())return;       // guard 2: never push an empty/default state
+  clearTimeout(cloudTimer);
+  cloudTimer=setTimeout(autoSaveCloud,2500);
+}
+function autoSaveCloud(){
+  var token=cloudToken();if(!token)return;
+  if(!isMeaningful())return;
+  cloudStatus("автосохранение…","busy");
+  state.lastBackup=new Date().toISOString();
+  try{localStorage.setItem("formaldehyde_data",JSON.stringify(state));}catch(e){}
+  var body=JSON.stringify({description:GIST_DESC,public:false,files:(function(){var o={};o[GIST_FILE]={content:JSON.stringify(state)};return o;})()});
+  var gid=cloudGistId();
+  var ensure=gid?Promise.resolve(gid):discoverGist(token);
+  ensure.then(function(id){
+    if(id)return fetch("https://api.github.com/gists/"+id,{method:"PATCH",headers:ghHeaders(token),body:body}).then(function(r){if(!r.ok)throw new Error("patch");return r.json();});
+    return fetch("https://api.github.com/gists",{method:"POST",headers:ghHeaders(token),body:body}).then(function(r){if(!r.ok)throw new Error("create");return r.json();});
+  }).then(function(g){setCloudGistId(g.id);cloudStatus("сохранено ☁ "+new Date().toLocaleTimeString().slice(0,5),"ok");})
+  .catch(function(){cloudStatus("ошибка автосейва","err");});
+}
+function autoLoadCloud(){
+  var token=cloudToken();if(!token)return;          // no token yet → stay local-only, no auto-save
+  cloudStatus("синхронизация…","busy");
+  var gid=cloudGistId();
+  var ensure=gid?Promise.resolve(gid):discoverGist(token);
+  ensure.then(function(id){
+    if(!id)throw new Error("notfound");
+    setCloudGistId(id);
+    return fetch("https://api.github.com/gists/"+id,{headers:ghHeaders(token)}).then(function(r){if(!r.ok)throw new Error("get");return r.json();});
+  }).then(function(g){
+    var f=g.files&&g.files[GIST_FILE];if(!f)throw new Error("notfound");
+    var p=JSON.parse(f.content);
+    if(p&&p.tracks)state={tracks:p.tracks.map(normalizeTrack),history:p.history||{},targetDate:p.targetDate||"",lastBackup:p.lastBackup||null};
+    else if(Array.isArray(p))state.tracks=p.map(normalizeTrack);
+    syncReady=true;                                 // cloud confirmed → auto-save now allowed
+    ui.expanded=null;try{localStorage.setItem("formaldehyde_data",JSON.stringify(state));}catch(e){}
+    cloudStatus("синхронизировано ☁","ok");render();
+  }).catch(function(e){
+    if(e.message==="notfound"){syncReady=true;cloudStatus(isMeaningful()?"облако пусто — будет создано":"облако пусто","ok");}
+    else{syncReady=false;cloudStatus(e.message==="auth"?"неверный токен":"нет связи с облаком","err");}
+  });
 }
 function avgProgress(){return Math.round(state.tracks.reduce(function(s,t){return s+calcWP(t.instruments);},0)/state.tracks.length);}
 function totalRuntime(){return state.tracks.reduce(function(s,t){return s+parseDur(t.duration);},0);}
@@ -555,7 +617,7 @@ function saveCloud(){
     }else{
       return fetch("https://api.github.com/gists",{method:"POST",headers:ghHeaders(token),body:body}).then(function(r){if(!r.ok)throw new Error("create");return r.json();});
     }
-  }).then(function(g){setCloudGistId(g.id);cloudStatus("сохранено ☁ "+new Date().toLocaleTimeString().slice(0,5),"ok");render();})
+  }).then(function(g){setCloudGistId(g.id);syncReady=true;cloudStatus("сохранено ☁ "+new Date().toLocaleTimeString().slice(0,5),"ok");render();})
   .catch(function(e){cloudStatus(e.message==="auth"?"неверный токен":"ошибка сохранения","err");});
 }
 function loadCloud(){
@@ -573,7 +635,7 @@ function loadCloud(){
     var p=JSON.parse(f.content);
     if(Array.isArray(p))state.tracks=p.map(normalizeTrack);
     else if(p.tracks)state={tracks:p.tracks.map(normalizeTrack),history:p.history||{},targetDate:p.targetDate||"",lastBackup:p.lastBackup||null};
-    ui.expanded=null;save();cloudStatus("загружено ☁","ok");render();
+    ui.expanded=null;syncReady=true;save();cloudStatus("загружено ☁","ok");render();
   }).catch(function(e){cloudStatus(e.message==="notfound"?"облако пусто — сначала сохрани":(e.message==="auth"?"неверный токен":"ошибка загрузки"),"err");});
 }
 
@@ -702,6 +764,8 @@ function doExport(){
 }
 
 render();
+// On startup, if a token is saved, pull the latest from cloud before enabling auto-save
+autoLoadCloud();
 </script>
 </body>
 </html>
