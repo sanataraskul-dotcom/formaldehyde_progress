@@ -803,7 +803,7 @@ function doExport(){
 // ── album playlist player (lives outside #root so re-renders don't stop playback) ──
 var pl={list:[],idx:-1};
 var seq=document.getElementById("seqplayer");
-seq.crossOrigin="anonymous";
+seq.crossOrigin=null;
 var normOn=(function(){try{return localStorage.getItem("fmd_norm")==="1";}catch(e){return false;}})();
 var audioCtx=null,srcNode=null,compNode=null,gainNode=null,chainBuilt=false;
 function buildChain(){
@@ -829,13 +829,27 @@ function routeChain(){
 function toggleNorm(){
   normOn=!normOn;
   try{localStorage.setItem("fmd_norm",normOn?"1":"0");}catch(e){}
-  if(normOn&&!chainBuilt){if(!buildChain()){normOn=false;cloudStatus("выравнивание недоступно (CORS)","err");}}
-  else{routeChain();}
+  // crossOrigin must be set before (re)loading the source; reload current track at same position
+  var pos=seq.currentTime||0,wasPlaying=!seq.paused,curSrc=seq.currentSrc||seq.src;
+  seq.crossOrigin=normOn?"anonymous":null;
+  if(normOn&&!chainBuilt){if(!buildChain()){normOn=false;seq.crossOrigin=null;cloudStatus("выравнивание недоступно","err");renderPlayer();return;}}
+  routeChain();
+  if(curSrc){seq.src=curSrc;seq.load();seq.currentTime=pos;if(wasPlaying)seq.play().catch(function(){});}
   if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume();
   renderPlayer();
 }
+// If a track fails to load while normalization is on (usually missing CORS), drop normalization and recover playback
+seq.addEventListener("error",function(){
+  if(normOn){
+    normOn=false;try{localStorage.setItem("fmd_norm","0");}catch(e){}
+    seq.crossOrigin=null;
+    cloudStatus("выравнивание выкл — нет CORS у источника","err");
+    var t=pl.list[pl.idx];if(t){seq.src=t.demo;seq.load();seq.play().catch(function(){});}
+    renderPlayer();
+  }
+});
 seq.addEventListener("ended",function(){plNext();});
-seq.addEventListener("play",function(){if(normOn&&!chainBuilt)buildChain();if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume();renderPlayer();});
+seq.addEventListener("play",function(){if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume();renderPlayer();});
 seq.addEventListener("pause",function(){renderPlayer();});
 seq.addEventListener("timeupdate",patchSeek);
 seq.addEventListener("loadedmetadata",patchSeek);
@@ -855,8 +869,10 @@ function playAlbum(){
 }
 function plPlayCurrent(){
   var t=pl.list[pl.idx];if(!t)return;
-  if(normOn&&!chainBuilt)buildChain();
-  seq.src=t.demo;
+  if(normOn&&!chainBuilt){if(!buildChain()){normOn=false;}}
+  if(normOn)routeChain();
+  seq.crossOrigin=normOn?"anonymous":null;
+  seq.src=t.demo;seq.load();
   if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume();
   seq.play().catch(function(){cloudStatus("не удалось проиграть демо","err");});
   renderPlayer();
