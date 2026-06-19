@@ -558,7 +558,7 @@ function rowHTML(t){
 function archiveHTML(){
   var sc={};Object.keys(STATUS_LABELS).forEach(function(k){sc[k]=state.tracks.filter(function(t){return t.status===k;}).length;});
   var vis=state.tracks.filter(function(t){return ui.statusFilter==="all"||t.status===ui.statusFilter;});
-  var s='<div class="section"><div class="arc-hdr"><div class="arc-label">ЖУРНАЛ ТРЕКОВ</div>';
+  var s='<div class="section"><div class="arc-hdr"><div style="display:flex;align-items:center;gap:12px"><div class="arc-label">ЖУРНАЛ ТРЕКОВ</div><button class="play-album-btn" data-act="play-album">\u25B6 ИГРАТЬ АЛЬБОМ</button></div>';
   s+='<div class="pbar-wrap"><div class="pbar-label"><span>ОБЩИЙ ПРОГРЕСС</span><span style="color:#7aab8a">'+avgProgress()+'%</span></div><div class="pbar"><div class="pbar-fill" style="width:'+avgProgress()+'%"></div></div></div></div>';
   s+='<div class="filter-bar"><span class="filter-label">СТАТУС</span><button class="filter-chip '+(ui.statusFilter==="all"?"active":"")+'" data-act="fstatus" data-val="all">ВСЕ</button>';
   Object.keys(STATUS_LABELS).forEach(function(k){if(sc[k]>0)s+='<button class="filter-chip '+(ui.statusFilter===k?"active":"")+'" data-act="fstatus" data-val="'+k+'">'+STATUS_LABELS[k]+'</button>';});
