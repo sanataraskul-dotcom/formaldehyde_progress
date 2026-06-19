@@ -184,8 +184,6 @@ input[type=range]:disabled{opacity:.5;}
 .pl-btn:hover{border-color:#7aab8a;}
 .pl-close{color:#4a574a;border-color:#1e241e;}
 .pl-close:hover{color:#a86b6b;border-color:#a86b6b;}
-.pl-norm{font-size:8px;letter-spacing:1px;color:#4a574a;width:auto;padding:0 7px;}
-.pl-norm.on{color:#7aab8a;border-color:#7aab8a;background:#0d1a0d;}
 .play-album-btn{font-family:inherit;font-size:9px;letter-spacing:2px;padding:5px 12px;border:1px solid #2e3a2e;background:none;color:#7aab8a;cursor:pointer;}
 .play-album-btn:hover{background:#0d1a0d;}
 .demo-audio{width:100%;margin-top:8px;height:34px;filter:invert(0.85) hue-rotate(70deg) saturate(0.6);}
@@ -803,53 +801,8 @@ function doExport(){
 // ── album playlist player (lives outside #root so re-renders don't stop playback) ──
 var pl={list:[],idx:-1};
 var seq=document.getElementById("seqplayer");
-seq.crossOrigin=null;
-var normOn=(function(){try{return localStorage.getItem("fmd_norm")==="1";}catch(e){return false;}})();
-var audioCtx=null,srcNode=null,compNode=null,gainNode=null,chainBuilt=false;
-function buildChain(){
-  if(chainBuilt)return true;
-  try{
-    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-    srcNode=audioCtx.createMediaElementSource(seq);
-    compNode=audioCtx.createDynamicsCompressor();
-    // gentle leveling: pull up quiet, tame loud
-    compNode.threshold.value=-24;compNode.knee.value=30;compNode.ratio.value=4;compNode.attack.value=0.005;compNode.release.value=0.25;
-    gainNode=audioCtx.createGain();gainNode.gain.value=1.3; // makeup gain
-    chainBuilt=true;
-    routeChain();
-    return true;
-  }catch(e){chainBuilt=false;return false;}
-}
-function routeChain(){
-  if(!chainBuilt)return;
-  try{srcNode.disconnect();compNode.disconnect();gainNode.disconnect();}catch(e){}
-  if(normOn){srcNode.connect(compNode);compNode.connect(gainNode);gainNode.connect(audioCtx.destination);}
-  else{srcNode.connect(audioCtx.destination);}
-}
-function toggleNorm(){
-  normOn=!normOn;
-  try{localStorage.setItem("fmd_norm",normOn?"1":"0");}catch(e){}
-  // crossOrigin must be set before (re)loading the source; reload current track at same position
-  var pos=seq.currentTime||0,wasPlaying=!seq.paused,curSrc=seq.currentSrc||seq.src;
-  seq.crossOrigin=normOn?"anonymous":null;
-  if(normOn&&!chainBuilt){if(!buildChain()){normOn=false;seq.crossOrigin=null;cloudStatus("выравнивание недоступно","err");renderPlayer();return;}}
-  routeChain();
-  if(curSrc){seq.src=curSrc;seq.load();seq.currentTime=pos;if(wasPlaying)seq.play().catch(function(){});}
-  if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume();
-  renderPlayer();
-}
-// If a track fails to load while normalization is on (usually missing CORS), drop normalization and recover playback
-seq.addEventListener("error",function(){
-  if(normOn){
-    normOn=false;try{localStorage.setItem("fmd_norm","0");}catch(e){}
-    seq.crossOrigin=null;
-    cloudStatus("выравнивание выкл — нет CORS у источника","err");
-    var t=pl.list[pl.idx];if(t){seq.src=t.demo;seq.load();seq.play().catch(function(){});}
-    renderPlayer();
-  }
-});
 seq.addEventListener("ended",function(){plNext();});
-seq.addEventListener("play",function(){if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume();renderPlayer();});
+seq.addEventListener("play",function(){renderPlayer();});
 seq.addEventListener("pause",function(){renderPlayer();});
 seq.addEventListener("timeupdate",patchSeek);
 seq.addEventListener("loadedmetadata",patchSeek);
@@ -869,11 +822,7 @@ function playAlbum(){
 }
 function plPlayCurrent(){
   var t=pl.list[pl.idx];if(!t)return;
-  if(normOn&&!chainBuilt){if(!buildChain()){normOn=false;}}
-  if(normOn)routeChain();
-  seq.crossOrigin=normOn?"anonymous":null;
   seq.src=t.demo;seq.load();
-  if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume();
   seq.play().catch(function(){cloudStatus("не удалось проиграть демо","err");});
   renderPlayer();
 }
@@ -898,7 +847,7 @@ function renderPlayer(){
   h+='<span class="pl-time" id="pl-dur">'+fmtTime(seq.duration||0)+'</span></div>';
   h+='<div class="pl-ctrls"><button class="pl-btn" data-pl="prev">\u23EE</button><button class="pl-btn" data-pl="toggle">'+icon+'</button><button class="pl-btn" data-pl="next">\u23ED</button>';
   h+='<div class="pl-now"><span>'+posNum(t.id)+'</span> '+esc(t.title)+'</div>';
-  h+='<button class="pl-btn pl-norm '+(normOn?"on":"")+'" data-pl="norm" title="выравнивание громкости">LVL</button><button class="pl-btn pl-close" data-pl="stop">\u2715</button></div>';
+  h+='<button class="pl-btn pl-close" data-pl="stop">\u2715</button></div>';
   h+='</div>';
   el.innerHTML=h;
 }
@@ -906,7 +855,7 @@ var seekDragging=false;
 document.getElementById("player").addEventListener("click",function(e){
   var b=e.target.closest("[data-pl]");if(!b)return;
   var a=b.getAttribute("data-pl");
-  if(a==="prev")plPrev();else if(a==="next")plNext();else if(a==="toggle")plToggle();else if(a==="stop")plStop();else if(a==="norm")toggleNorm();
+  if(a==="prev")plPrev();else if(a==="next")plNext();else if(a==="toggle")plToggle();else if(a==="stop")plStop();
 });
 document.getElementById("player").addEventListener("pointerdown",function(e){
   var track=e.target.closest('[data-pl="seek"]');if(!track)return;
