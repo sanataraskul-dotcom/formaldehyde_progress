@@ -58,6 +58,7 @@ body{background:#0e100e;color:#d4d9d0;font-family:'JetBrains Mono','Courier New'
 .t-title{font-size:12px;font-weight:500;letter-spacing:1px;color:#d4d9d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .t-meta-line{display:flex;gap:6px;align-items:center;margin-top:3px;min-height:6px;}
 .t-dur{font-size:8px;color:#3a4a3a;letter-spacing:1px;}
+.t-play{font-family:inherit;font-size:8px;letter-spacing:1px;color:#7aab8a;background:none;border:none;cursor:pointer;padding:0;}
 .t-status{font-size:8px;letter-spacing:1px;padding:3px 4px;border:1px solid;text-align:center;}
 .t-vocals{font-size:9px;letter-spacing:1px;color:#4a574a;text-align:center;}
 .t-vocals.has{color:#7aab8a;}
@@ -508,7 +509,7 @@ function metaLineHTML(t){
   if(t.duration)s+='<span class="t-dur">'+esc(t.duration)+'</span>';
   if(t.bpm)s+='<span class="t-dur">'+esc(t.bpm)+' BPM</span>';
   if(t.key)s+='<span class="t-dur">'+esc(t.key)+'</span>';
-  if(t.demo)s+='<span class="t-dur" style="color:#7aab8a">\u25B6 ДЕМО</span>';
+  if(t.demo)s+='<button class="t-play" data-act="row-play" data-id="'+t.id+'">'+rowIcon(t.id)+' ДЕМО</button>';
   return s;
 }
 
@@ -724,6 +725,7 @@ root.addEventListener("click",function(e){
   if(act==="log-del"){var idx=parseInt(el.getAttribute("data-idx"),10);t.log.splice(idx,1);render();return;}
   if(act==="fstatus"){ui.statusFilter=el.getAttribute("data-val");render();return;}
   if(act==="play-album"){playAlbum();return;}
+  if(act==="row-play"){if(isRowActive(id)){plToggle();}else{pl.list=buildPlaylist();var rp=-1;for(var ri=0;ri<pl.list.length;ri++){if(pl.list[ri].id===id){rp=ri;break;}}if(rp<0){cloudStatus("нет демо у трека","err");return;}pl.idx=rp;plPlayCurrent();}return;}
   if(act==="cloud-save"){saveCloud();return;}
   if(act==="cloud-load"){loadCloud();return;}
   if(act==="export"){doExport();return;}
@@ -801,6 +803,9 @@ function doExport(){
 // ── album playlist player (lives outside #root so re-renders don't stop playback) ──
 var pl={list:[],idx:-1};
 var seq=document.getElementById("seqplayer");
+function isRowActive(id){return pl.idx>=0&&pl.list[pl.idx]&&pl.list[pl.idx].id===id;}
+function rowIcon(id){return (isRowActive(id)&&!seq.paused)?"\u23F8":"\u25B6";}
+function patchRowPlayIcons(){var bs=document.querySelectorAll('[data-act="row-play"]');for(var i=0;i<bs.length;i++){var id=parseInt(bs[i].getAttribute("data-id"),10);bs[i].textContent=rowIcon(id)+" ДЕМО";}}
 seq.addEventListener("ended",function(){plNext();});
 seq.addEventListener("play",function(){renderPlayer();});
 seq.addEventListener("pause",function(){renderPlayer();});
@@ -836,6 +841,7 @@ function plSeek(clientX,track){
   if(seq.duration&&isFinite(seq.duration)){seq.currentTime=ratio*seq.duration;patchSeek();}
 }
 function renderPlayer(){
+  patchRowPlayIcons();
   var el=document.getElementById("player");
   if(pl.idx<0){el.className="";el.innerHTML="";return;}
   var t=pl.list[pl.idx];if(!t){el.className="";el.innerHTML="";return;}
