@@ -15,7 +15,7 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:#0e100e;color:#d4d9d0;font-family:'JetBrains Mono','Courier New',monospace;min-height:100vh;-webkit-text-size-adjust:100%;}
-.app{max-width:700px;margin:0 auto;padding:env(safe-area-inset-top) 16px 80px;}
+.app{max-width:700px;margin:0 auto;padding:env(safe-area-inset-top) 16px 110px;}
 .io-row{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;align-items:center;}
 .io-btn{font-family:inherit;font-size:8px;letter-spacing:2px;padding:5px 10px;border:1px solid #1e241e;background:none;color:#4a574a;cursor:pointer;transition:all .15s;}
 .io-btn:hover{border-color:#4a574a;color:#7aab8a;}
@@ -165,6 +165,20 @@ input[type=range]:disabled{opacity:.5;}
 .forecast-line b{color:#7aab8a;font-weight:500;}
 .forecast-ok{color:#7aab8a;}
 .forecast-bad{color:#a86b6b;}
+.reorder-row{display:flex;gap:6px;}
+.reorder-btn{font-family:inherit;font-size:9px;letter-spacing:1px;padding:5px 12px;border:1px solid #1e241e;background:none;color:#7aab8a;cursor:pointer;}
+.reorder-btn:hover{border-color:#7aab8a;}
+#player{position:fixed;left:0;right:0;bottom:0;background:#0b0e0b;border-top:1px solid #2e3a2e;padding:8px 14px env(safe-area-inset-bottom);display:none;z-index:50;}
+#player.on{display:block;}
+.pl-inner{max-width:700px;margin:0 auto;display:flex;align-items:center;gap:12px;}
+.pl-now{flex:1;min-width:0;font-size:10px;letter-spacing:1px;color:#d4d9d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pl-now span{color:#4a574a;}
+.pl-btn{font-family:inherit;font-size:13px;background:none;border:1px solid #1e241e;color:#7aab8a;width:32px;height:30px;cursor:pointer;}
+.pl-btn:hover{border-color:#7aab8a;}
+.pl-close{color:#4a574a;border-color:#1e241e;}
+.pl-close:hover{color:#a86b6b;border-color:#a86b6b;}
+.play-album-btn{font-family:inherit;font-size:9px;letter-spacing:2px;padding:5px 12px;border:1px solid #2e3a2e;background:none;color:#7aab8a;cursor:pointer;}
+.play-album-btn:hover{background:#0d1a0d;}
 .demo-audio{width:100%;margin-top:8px;height:34px;filter:invert(0.85) hue-rotate(70deg) saturate(0.6);}
 .empty{font-size:9px;color:#4a574a;letter-spacing:1px;padding:20px 0;}
 @media (min-width:760px){
@@ -205,6 +219,8 @@ input[type=range]:disabled{opacity:.5;}
 </head>
 <body>
 <div id="root"></div>
+<div id="player"></div>
+<audio id="seqplayer" preload="none"></audio>
 <script>
 "use strict";
 
@@ -337,6 +353,9 @@ function avgProgress(){return Math.round(state.tracks.reduce(function(s,t){retur
 function totalRuntime(){return state.tracks.reduce(function(s,t){return s+parseDur(t.duration);},0);}
 function recordedCount(){return state.tracks.filter(function(t){return ["recorded","done","mixing"].indexOf(t.status)>=0;}).length;}
 function getTrack(id){return state.tracks.filter(function(t){return t.id===id;})[0];}
+function trackPos(id){for(var i=0;i<state.tracks.length;i++){if(state.tracks[i].id===id)return i;}return -1;}
+function posNum(id){var p=trackPos(id);return p<0?"--":String(p+1).padStart(2,"0");}
+function moveTrack(id,dir){var i=trackPos(id);var j=i+dir;if(i<0||j<0||j>=state.tracks.length)return;var tmp=state.tracks[i];state.tracks[i]=state.tracks[j];state.tracks[j]=tmp;}
 
 // ── mutations ──
 function updInstWeight(t,inst,val){
@@ -490,6 +509,7 @@ function detailHTML(t){
   var wp=calcWP(t.instruments);
   var s='<div class="detail">';
   s+='<div><div class="d-label">НАЗВАНИЕ</div><input class="t-title-input" value="'+escA(t.title)+'" data-inp="title" data-id="'+t.id+'"></div>';
+  s+='<div><div class="d-label">ПОЗИЦИЯ В АЛЬБОМЕ — '+posNum(t.id)+'</div><div class="reorder-row"><button class="reorder-btn" data-act="move-up" data-id="'+t.id+'">\u2191 ВЫШЕ</button><button class="reorder-btn" data-act="move-down" data-id="'+t.id+'">\u2193 НИЖЕ</button></div></div>';
   s+='<div class="d-grid3"><div><div class="d-label">ДЛИТЕЛЬНОСТЬ (М:СС)</div><input class="field-input" value="'+escA(t.duration)+'" placeholder="3:45" data-inp="duration" data-id="'+t.id+'"></div>';
   s+='<div><div class="d-label">BPM</div><input class="field-input" value="'+escA(t.bpm)+'" placeholder="140" data-inp="bpm" data-id="'+t.id+'"></div>';
   s+='<div><div class="d-label">ТОНАЛЬНОСТЬ</div><input class="field-input" value="'+escA(t.key)+'" placeholder="F#m" data-inp="key" data-id="'+t.id+'"></div></div>';
@@ -524,7 +544,7 @@ function rowHTML(t){
   var wp=calcWP(t.instruments),open=ui.expanded===t.id;
   var s='<div>';
   s+='<div class="track-row '+(open?"open":"")+'" data-act="expand" data-id="'+t.id+'">';
-  s+='<div class="t-num">'+String(t.id).padStart(2,"0")+'</div>';
+  s+='<div class="t-num" id="tn-'+t.id+'">'+posNum(t.id)+'</div>';
   s+='<div style="min-width:0;overflow:hidden"><div class="t-title" id="rt-'+t.id+'">'+esc(t.title)+'</div>';
   s+='<div class="t-meta-line" id="rm-'+t.id+'">'+metaLineHTML(t)+'</div>';
   s+='<div class="t-wprog"><div class="t-wprog-fill" id="rw-'+t.id+'" style="width:'+wp+'%"></div></div></div>';
@@ -583,7 +603,7 @@ function statsHTML(){
   s+='</div></div>';
   // per track
   s+='<div class="stat-card full-card"><div class="stat-card-label" style="margin-bottom:12px">ПРОГРЕСС ПО ТРЕКАМ</div><div class="timeline">';
-  state.tracks.forEach(function(t){var wp=calcWP(t.instruments);s+='<div class="tl-row"><div class="tl-num">'+String(t.id).padStart(2,"0")+'</div><div class="tl-title">'+esc(t.title)+'</div><div class="tl-bar"><div class="tl-bar-fill" style="width:'+wp+'%"></div></div><div class="tl-pct">'+wp+'%</div></div>';});
+  state.tracks.forEach(function(t){var wp=calcWP(t.instruments);s+='<div class="tl-row"><div class="tl-num">'+posNum(t.id)+'</div><div class="tl-title">'+esc(t.title)+'</div><div class="tl-bar"><div class="tl-bar-fill" style="width:'+wp+'%"></div></div><div class="tl-pct">'+wp+'%</div></div>';});
   s+='</div></div></div>';
   return s;
 }
@@ -687,6 +707,8 @@ root.addEventListener("click",function(e){
   var t=id!=null?getTrack(id):null;
   if(act==="tab"){ui.tab=el.getAttribute("data-tab");ui.expanded=null;render();return;}
   if(act==="expand"){ui.expanded=ui.expanded===id?null:id;logDraft="";render();return;}
+  if(act==="move-up"){moveTrack(id,-1);render();return;}
+  if(act==="move-down"){moveTrack(id,1);render();return;}
   if(act==="status"){t.status=el.getAttribute("data-val");render();return;}
   if(act==="vocal"){var v=el.getAttribute("data-val");var j=t.vocals.indexOf(v);if(j>=0)t.vocals.splice(j,1);else t.vocals.push(v);render();return;}
   if(act==="lock"){var k=el.getAttribute("data-inst");t.locked=t.locked||{};t.locked[k]=!t.locked[k];render();return;}
@@ -694,6 +716,7 @@ root.addEventListener("click",function(e){
   if(act==="log-add"){if(logDraft.trim()){t.log.unshift({date:todayISO(),text:logDraft.trim()});logDraft="";}render();return;}
   if(act==="log-del"){var idx=parseInt(el.getAttribute("data-idx"),10);t.log.splice(idx,1);render();return;}
   if(act==="fstatus"){ui.statusFilter=el.getAttribute("data-val");render();return;}
+  if(act==="play-album"){playAlbum();return;}
   if(act==="cloud-save"){saveCloud();return;}
   if(act==="cloud-load"){loadCloud();return;}
   if(act==="export"){doExport();return;}
@@ -767,6 +790,42 @@ function doExport(){
     }).catch(function(){fallbackDownload();render();});
   }else{fallbackDownload();render();}
 }
+
+// ── album playlist player (lives outside #root so re-renders don't stop playback) ──
+var pl={list:[],idx:-1};
+var seq=document.getElementById("seqplayer");
+seq.addEventListener("ended",function(){plNext();});
+seq.addEventListener("play",function(){renderPlayer();});
+seq.addEventListener("pause",function(){renderPlayer();});
+function buildPlaylist(){return state.tracks.filter(function(t){return t.demo;});}
+function playAlbum(){
+  pl.list=buildPlaylist();
+  if(!pl.list.length){cloudStatus("нет демо для воспроизведения","err");return;}
+  pl.idx=0;plPlayCurrent();
+}
+function plPlayCurrent(){
+  var t=pl.list[pl.idx];if(!t)return;
+  seq.src=t.demo;seq.play().catch(function(){cloudStatus("не удалось проиграть демо","err");});
+  renderPlayer();
+}
+function plNext(){if(pl.idx<pl.list.length-1){pl.idx++;plPlayCurrent();}else{plStop();}}
+function plPrev(){if(pl.idx>0){pl.idx--;plPlayCurrent();}}
+function plToggle(){if(seq.paused)seq.play();else seq.pause();}
+function plStop(){seq.pause();seq.removeAttribute("src");seq.load();pl.idx=-1;renderPlayer();}
+function renderPlayer(){
+  var el=document.getElementById("player");
+  if(pl.idx<0){el.className="";el.innerHTML="";return;}
+  var t=pl.list[pl.idx];if(!t){el.className="";el.innerHTML="";return;}
+  el.className="on";
+  var icon=seq.paused?"\u25B6":"\u23F8";
+  el.innerHTML='<div class="pl-inner"><button class="pl-btn" data-pl="prev">\u23EE</button><button class="pl-btn" data-pl="toggle">'+icon+'</button><button class="pl-btn" data-pl="next">\u23ED</button><div class="pl-now"><span>'+posNum(t.id)+'</span> '+esc(t.title)+'</div><button class="pl-btn pl-close" data-pl="stop">\u2715</button></div>';
+}
+document.getElementById("player").addEventListener("click",function(e){
+  var b=e.target.closest("[data-pl]");if(!b)return;
+  var a=b.getAttribute("data-pl");
+  if(a==="prev")plPrev();else if(a==="next")plNext();else if(a==="toggle")plToggle();else if(a==="stop")plStop();
+});
+
 
 render();
 // On startup, if a token is saved, pull the latest from cloud before enabling auto-save
