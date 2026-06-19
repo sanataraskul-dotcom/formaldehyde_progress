@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>ФОРМАЛЬДЕГИД</title>
+<meta name="theme-color" content="#0e100e" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="ФОРМАЛЬДЕГИД" />
+<link rel="manifest" href='data:application/json,{"name":"САНАТОРИЙ ТАРАСКУЛЬ — ФОРМАЛЬДЕГИД","short_name":"ФОРМАЛЬДЕГИД","start_url":".","display":"standalone","background_color":"%230e100e","theme_color":"%230e100e","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27192%27 height=%27192%27%3E%3Crect width=%27192%27 height=%27192%27 fill=%27%230e100e%27/%3E%3Cpolygon points=%2796,30 152,72 130,140 62,140 40,72%27 fill=%27none%27 stroke=%27%237aab8a%27 stroke-width=%274%27/%3E%3Cpolygon points=%2796,62 124,82 113,118 79,118 68,82%27 fill=%27%237aab8a%27 fill-opacity=%270.25%27 stroke=%27%237aab8a%27 stroke-width=%272%27/%3E%3C/svg%3E","sizes":"192x192","type":"image/svg+xml","purpose":"any"}]}' />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Crect width='180' height='180' fill='%230e100e'/%3E%3Cpolygon points='90,28 142,68 122,130 58,130 38,68' fill='none' stroke='%237aab8a' stroke-width='4'/%3E%3C/svg%3E" />
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0e100e;color:#d4d9d0;font-family:'JetBrains Mono','Courier New',monospace;min-height:100vh;-webkit-text-size-adjust:100%;}
+.app{max-width:700px;margin:0 auto;padding:env(safe-area-inset-top) 16px 80px;}
+.io-row{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;align-items:center;}
+.io-btn{font-family:inherit;font-size:8px;letter-spacing:2px;padding:5px 10px;border:1px solid #1e241e;background:none;color:#4a574a;cursor:pointer;transition:all .15s;}
+.io-btn:hover{border-color:#4a574a;color:#7aab8a;}
+.io-btn.danger:hover{border-color:#a86b6b;color:#a86b6b;}
+.backup-tag{font-size:8px;letter-spacing:2px;color:#4a574a;margin-left:4px;}
+.backup-tag.stale{color:#a86b6b;}
+.io-token{font-family:inherit;font-size:9px;letter-spacing:1px;padding:5px 8px;border:1px solid #1e241e;background:#111811;color:#d4d9d0;outline:none;width:150px;}
+.io-token:focus{border-color:#7aab8a;}
+.cloud-status{font-size:8px;letter-spacing:1px;margin-left:4px;}
+.cloud-status.ok{color:#7aab8a;}
+.cloud-status.err{color:#a86b6b;}
+.cloud-status.busy{color:#a8956b;}
+.hdr{border-bottom:1px solid #1e241e;padding:24px 0 18px;}
+.hdr-stamp{font-size:9px;letter-spacing:4px;color:#4a574a;margin-bottom:8px;}
+.hdr-title{font-size:22px;font-weight:700;letter-spacing:7px;color:#d4d9d0;}
+.hdr-title em{color:#7aab8a;font-style:normal;}
+.hdr-sub{font-size:10px;letter-spacing:4px;color:#7aab8a;margin-top:5px;}
+.hdr-meta{display:flex;gap:20px;margin-top:14px;flex-wrap:wrap;}
+.hdr-meta-item{font-size:9px;letter-spacing:2px;color:#4a574a;}
+.hdr-meta-item span{color:#7aab8a;}
+.hdr-meta-item span.warn{color:#a86b6b;}
+.tabs{display:flex;border-bottom:1px solid #1e241e;}
+.tab{padding:13px 22px;font-family:inherit;font-size:10px;letter-spacing:3px;color:#4a574a;cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;text-transform:uppercase;}
+.tab.active{color:#7aab8a;border-bottom-color:#7aab8a;}
+.section{padding:28px 0;}
+.arc-hdr{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px;gap:12px;}
+.arc-label{font-size:9px;letter-spacing:3px;color:#4a574a;}
+.pbar-wrap{width:200px;max-width:50%;}
+.pbar-label{font-size:9px;letter-spacing:2px;color:#4a574a;display:flex;justify-content:space-between;margin-bottom:4px;}
+.pbar{height:2px;background:#1e241e;width:100%;}
+.pbar-fill{height:100%;background:#7aab8a;transition:width .4s;}
+.filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;align-items:center;}
+.filter-label{font-size:8px;letter-spacing:2px;color:#3a4a3a;}
+.filter-chip{font-family:inherit;font-size:8px;letter-spacing:1px;padding:4px 8px;border:1px solid #1e241e;background:none;color:#4a574a;cursor:pointer;}
+.filter-chip.active{border-color:#7aab8a;color:#7aab8a;}
+.track-list{display:flex;flex-direction:column;gap:2px;}
+.track-row{display:grid;grid-template-columns:28px 1fr 96px 70px 24px;align-items:center;gap:8px;padding:10px 12px;background:#111811;border:1px solid #1a201a;cursor:pointer;}
+.track-row.open{border-color:#7aab8a;}
+.t-num{font-size:10px;color:#4a574a;letter-spacing:1px;}
+.t-title{font-size:12px;font-weight:500;letter-spacing:1px;color:#d4d9d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.t-meta-line{display:flex;gap:6px;align-items:center;margin-top:3px;min-height:6px;}
+.t-dur{font-size:8px;color:#3a4a3a;letter-spacing:1px;}
+.t-status{font-size:8px;letter-spacing:1px;padding:3px 4px;border:1px solid;text-align:center;}
+.t-vocals{font-size:9px;letter-spacing:1px;color:#4a574a;text-align:center;}
+.t-vocals.has{color:#7aab8a;}
+.t-arr{font-size:9px;color:#4a574a;text-align:center;}
+.t-wprog{height:2px;background:#1a201a;margin-top:4px;width:100%;}
+.t-wprog-fill{height:100%;background:#7aab8a;}
+.detail{background:#0b0e0b;border:1px solid #7aab8a;border-top:none;padding:16px;display:flex;flex-direction:column;gap:14px;margin-bottom:2px;}
+.d-label{font-size:9px;letter-spacing:2px;color:#4a574a;margin-bottom:5px;}
+.d-section-title{font-size:8px;letter-spacing:4px;color:#4a574a;border-bottom:1px solid #1e241e;padding-bottom:5px;margin-bottom:8px;}
+.d-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.t-title-input{background:none;border:none;border-bottom:1px solid #2e3a2e;color:#d4d9d0;font-family:inherit;font-size:12px;letter-spacing:2px;width:100%;outline:none;padding:2px 0;}
+.t-title-input:focus{border-bottom-color:#7aab8a;}
+.field-input{background:#111811;border:1px solid #1e241e;color:#d4d9d0;font-family:inherit;font-size:10px;padding:6px 8px;outline:none;width:100%;}
+.field-input:focus{border-color:#7aab8a;}
+.s-btns,.v-btns{display:flex;gap:5px;flex-wrap:wrap;}
+.s-btn{font-family:inherit;font-size:8px;letter-spacing:1px;padding:4px 8px;border:1px solid #1e241e;background:none;color:#4a574a;cursor:pointer;}
+.s-btn.active{border-color:#7aab8a;color:#7aab8a;}
+.v-btn{font-family:inherit;font-size:9px;letter-spacing:2px;padding:4px 12px;border:1px solid #1e241e;background:none;color:#4a574a;cursor:pointer;}
+.v-btn.active{border-color:#7aab8a;color:#7aab8a;background:#0d1a0d;}
+.credit-quick{display:flex;gap:4px;margin-top:3px;}
+.credit-quick-btn{font-family:inherit;font-size:8px;letter-spacing:1px;padding:3px 6px;border:1px solid #1e241e;background:none;color:#3a4a3a;cursor:pointer;}
+.credit-quick-btn:hover{border-color:#4a574a;color:#7aab8a;}
+.credits-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.credit-row{display:flex;flex-direction:column;gap:3px;}
+.credit-label{font-size:8px;letter-spacing:2px;color:#4a574a;}
+.inst-table{display:flex;flex-direction:column;gap:10px;}
+.inst-row{display:grid;grid-template-columns:74px 1fr 26px;gap:8px;align-items:start;}
+.lock-btn{font-family:inherit;font-size:8px;width:24px;height:24px;border:1px solid #1e241e;background:none;color:#2e3a2e;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:4px;}
+.lock-btn.locked{border-color:#3a4a3a;color:#4a574a;background:#0d120d;}
+.inst-name{font-size:9px;letter-spacing:1px;color:#4a574a;padding-top:6px;}
+.inst-bar-wrap{display:flex;flex-direction:column;gap:4px;}
+.inst-sub{font-size:7px;color:#3a4a3a;letter-spacing:1px;display:flex;justify-content:space-between;align-items:center;}
+.inst-num{width:38px;background:none;border:none;border-bottom:1px solid #1e241e;color:#7aab8a;font-family:inherit;font-size:9px;text-align:right;outline:none;padding:1px 0;}
+.inst-num:focus{border-bottom-color:#7aab8a;}
+.inst-num-w{color:#4a574a;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:14px;background:transparent;outline:none;cursor:pointer;margin:0;}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:0;}
+input[type=range].rw::-webkit-slider-runnable-track{background:linear-gradient(to right,#3a4a3a var(--val),#1a201a var(--val));}
+input[type=range].rp::-webkit-slider-runnable-track{background:linear-gradient(to right,#7aab8a var(--val),#1a201a var(--val));}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:10px;height:10px;border-radius:0;margin-top:-3px;cursor:pointer;}
+input[type=range].rw::-webkit-slider-thumb{background:#3a4a3a;border:1px solid #7aab8a;}
+input[type=range].rp::-webkit-slider-thumb{background:#7aab8a;}
+input[type=range]::-moz-range-track{height:4px;background:#1a201a;}
+input[type=range].rw::-moz-range-progress{background:#3a4a3a;height:4px;}
+input[type=range].rp::-moz-range-progress{background:#7aab8a;height:4px;}
+input[type=range]::-moz-range-thumb{width:10px;height:10px;border-radius:0;border:none;}
+input[type=range].rw::-moz-range-thumb{background:#3a4a3a;border:1px solid #7aab8a;}
+input[type=range].rp::-moz-range-thumb{background:#7aab8a;}
+input[type=range]:disabled{opacity:.5;}
+.wtotal-row{display:flex;align-items:center;gap:10px;margin-top:4px;padding-top:10px;border-top:1px solid #1e241e;}
+.wtotal-label{font-size:9px;letter-spacing:2px;color:#4a574a;width:74px;}
+.wtotal-bar{flex:1;height:3px;background:#1a201a;}
+.wtotal-fill{height:100%;background:#7aab8a;}
+.wtotal-val{font-size:10px;color:#7aab8a;font-weight:500;width:36px;text-align:right;}
+.notes-ta{background:#111811;border:1px solid #1e241e;color:#d4d9d0;font-family:inherit;font-size:10px;padding:8px 10px;width:100%;outline:none;resize:none;height:54px;line-height:1.6;}
+.notes-ta:focus{border-color:#7aab8a;}
+.log-list{display:flex;flex-direction:column;gap:5px;margin-bottom:8px;}
+.log-entry{display:flex;gap:10px;align-items:baseline;font-size:9px;}
+.log-date{color:#3a4a3a;letter-spacing:1px;flex-shrink:0;width:74px;}
+.log-text{color:#9a9688;line-height:1.5;flex:1;}
+.log-del{color:#2e3a2e;cursor:pointer;font-size:9px;background:none;border:none;font-family:inherit;}
+.log-del:hover{color:#a86b6b;}
+.log-input-row{display:flex;gap:6px;}
+.log-add{font-family:inherit;font-size:11px;padding:0 14px;border:1px solid #2e3a2e;background:none;color:#7aab8a;cursor:pointer;}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.stat-card{background:#111811;border:1px solid #1a201a;padding:16px;}
+.full-card{grid-column:1 / -1;}
+.stat-card-label{font-size:8px;letter-spacing:3px;color:#4a574a;margin-bottom:10px;}
+.stat-big{font-size:30px;font-weight:300;color:#7aab8a;letter-spacing:2px;line-height:1;}
+.stat-sub{font-size:9px;color:#4a574a;margin-top:4px;letter-spacing:1px;line-height:1.5;}
+.stat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.stat-row-label{font-size:9px;letter-spacing:2px;color:#4a574a;}
+.stat-row-val{font-size:10px;color:#7aab8a;}
+.stat-mini-bar{height:2px;background:#1a201a;margin-top:3px;width:100%;}
+.stat-mini-fill{height:100%;}
+.inst-dist{display:flex;flex-direction:column;gap:6px;}
+.inst-dist-row{display:grid;grid-template-columns:70px 1fr 36px;gap:8px;align-items:center;}
+.inst-dist-label{font-size:9px;letter-spacing:1px;color:#4a574a;}
+.inst-dist-bar{height:3px;background:#1a201a;}
+.inst-dist-fill{height:100%;background:#7aab8a;}
+.inst-dist-val{font-size:9px;color:#7aab8a;text-align:right;}
+.timeline{display:flex;flex-direction:column;}
+.tl-row{display:grid;grid-template-columns:28px 1fr 80px 48px;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid #141814;}
+.tl-num{font-size:9px;color:#3a4a3a;}
+.tl-title{font-size:10px;letter-spacing:1px;color:#d4d9d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tl-bar{height:3px;background:#1a201a;}
+.tl-bar-fill{height:100%;background:#7aab8a;}
+.tl-pct{font-size:9px;color:#7aab8a;text-align:right;}
+.contrib-person{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.contrib-person-hdr{display:flex;align-items:center;gap:12px;}
+.contrib-tag{font-size:10px;letter-spacing:3px;color:#7aab8a;font-weight:700;}
+.contrib-total{font-size:20px;font-weight:300;color:#7aab8a;letter-spacing:2px;}
+.contrib-row{display:grid;grid-template-columns:80px 1fr 36px;gap:8px;align-items:center;margin-bottom:6px;}
+.contrib-label{font-size:8px;letter-spacing:2px;color:#4a574a;}
+.contrib-bar{height:3px;background:#1a201a;}
+.contrib-fill{height:100%;background:#7aab8a;}
+.contrib-fill-dim{background:#2e3a2e;}
+.contrib-val{font-size:9px;color:#7aab8a;text-align:right;}
+.contrib-val-dim{color:#4a574a;}
+.contrib-divider{height:1px;background:#1e241e;margin:10px 0;}
+.radar-wrap{display:flex;justify-content:center;padding:4px 0;}
+.deadline-input{background:#111811;border:1px solid #1e241e;color:#d4d9d0;font-family:inherit;font-size:11px;padding:7px 8px;outline:none;color-scheme:dark;width:100%;}
+.deadline-input:focus{border-color:#7aab8a;}
+.forecast-line{font-size:10px;letter-spacing:1px;line-height:1.9;color:#9a9688;}
+.forecast-line b{color:#7aab8a;font-weight:500;}
+.forecast-ok{color:#7aab8a;}
+.forecast-bad{color:#a86b6b;}
+.empty{font-size:9px;color:#4a574a;letter-spacing:1px;padding:20px 0;}
+@media (min-width:760px){
+  .app{padding-left:24px;padding-right:24px;}
+  .hdr-title{font-size:26px;letter-spacing:9px;}
+  .hdr-sub{font-size:11px;}
+  .hdr-stamp{font-size:10px;}
+  .hdr-meta-item{font-size:10px;}
+  .tab{font-size:11px;padding:14px 26px;}
+  .track-row{grid-template-columns:34px 1fr 110px 80px 28px;gap:12px;padding:13px 16px;}
+  .t-num{font-size:11px;}
+  .t-title{font-size:14px;letter-spacing:2px;}
+  .t-dur{font-size:9px;}
+  .t-status{font-size:9px;padding:4px 8px;}
+  .t-vocals{font-size:10px;}
+  .arc-label{font-size:10px;}
+  .filter-chip{font-size:9px;padding:5px 10px;}
+  .detail{padding:20px;gap:16px;}
+  .d-label,.d-section-title{font-size:10px;}
+  .field-input,.t-title-input{font-size:11px;}
+  .inst-name{font-size:10px;}
+  .inst-num{font-size:10px;width:42px;}
+  .s-btn,.genre-btn{font-size:9px;padding:5px 10px;}
+  .v-btn{font-size:10px;}
+  .credit-label{font-size:9px;}
+  .stat-card{padding:20px;}
+  .stat-card-label{font-size:9px;}
+  .stat-big{font-size:34px;}
+  .stat-sub{font-size:10px;}
+  .inst-dist-label,.contrib-label,.genre-dist-label{font-size:10px;}
+  .tl-title{font-size:11px;}
+  .tl-pct,.inst-dist-val,.contrib-val,.stat-row-label,.stat-row-val{font-size:10px;}
+  .forecast-line{font-size:11px;}
+  .io-btn{font-size:9px;padding:6px 12px;}
+  .log-text,.log-date{font-size:10px;}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+"use strict";
+
+var INSTRUMENTS = ["drums","bass","guitar","synths","vocals"];
+var INSTRUMENT_LABELS = {drums:"БАРАБАНЫ",bass:"БАС",guitar:"ГИТАРА",synths:"СИНТЫ",vocals:"ВОКАЛ"};
+var INSTRUMENT_SHORT = {drums:"БАР",bass:"БАС",guitar:"ГИТ",synths:"СИН",vocals:"ВОК"};
+var TITLES = ["[COLD CRISIS]","ЗВОНКИ","СТРОБОСКОПЫ","[ОККО]","БЕЗДНА","ДВА ВЫСТРЕЛА НАЗАД","ПОДВАЛЫ","СНЯТЬ ПЛОТЬ","[АРАБСКИЙ ТРАНСКОР]"];
+var STATUS_LABELS = {recorded:"ЗАПИСАН",mixing:"СВЕДЕНИЕ","in-progress":"В РАБОТЕ",pending:"ОЖИДАЕТ",done:"ГОТОВ"};
+var STATUS_COLORS = {recorded:"#7aab8a",mixing:"#6b9ea8","in-progress":"#a8956b",pending:"#555f55",done:"#4db87a"};
+var VOCAL_OPTIONS = ["AS","JF"];
+var PERSONS = ["Jesse Foster","Aleksandr Simbirskiy"];
+var PERSON_TAGS = {"Jesse Foster":"JF","Aleksandr Simbirskiy":"AS"};
+
+function initialTracks(){
+  return TITLES.map(function(title,i){
+    return {
+      id:i+1, title:title, status:"in-progress", vocals:[],
+      credits:{guitars:"",lead_vocals:"",background_vocals:"",drums:"",synths:"",bass:"",lyrics:"",music:""},
+      instruments:{drums:{weight:25,progress:0},bass:{weight:25,progress:0},guitar:{weight:25,progress:0},synths:{weight:0,progress:0},vocals:{weight:25,progress:0}},
+      locked:{vocals:true}, notes:"", duration:"", bpm:"", key:"", log:[]
+    };
+  });
+}
+
+// ── helpers ──
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function escA(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");}
+function calcWP(inst){var tw=0,ws=0;INSTRUMENTS.forEach(function(k){tw+=inst[k].weight;ws+=inst[k].weight*inst[k].progress/100;});return tw===0?0:Math.round(ws/tw*100);}
+function parseDur(str){if(!str)return 0;var m=String(str).trim().match(/^(\d+):(\d{1,2})$/);return m?parseInt(m[1],10)*60+parseInt(m[2],10):0;}
+function fmtDur(sec){if(!sec)return "0:00";var m=Math.floor(sec/60),s=sec%60;return m+":"+String(s).padStart(2,"0");}
+function todayISO(){return new Date().toISOString().slice(0,10);}
+function daysBetween(a,b){return Math.round((new Date(b)-new Date(a))/86400000);}
+function fmtDate(iso){var d=new Date(iso);return String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")+"."+d.getFullYear();}
+
+function normalizeTrack(t,i){
+  var base=initialTracks()[i%9];
+  var inst=(t.instruments&&INSTRUMENTS.every(function(k){return t.instruments[k];}))?t.instruments:base.instruments;
+  return {
+    id:t.id!=null?t.id:i+1, title:t.title!=null?t.title:base.title, status:t.status||"in-progress",
+    vocals:Array.isArray(t.vocals)?t.vocals:[],
+    credits:Object.assign({},base.credits,t.credits||{}),
+    instruments:inst, locked:t.locked||{}, notes:t.notes||"",
+    duration:t.duration||"", bpm:t.bpm||"", key:t.key||"",
+    log:Array.isArray(t.log)?t.log:[]
+  };
+}
+
+// ── state ──
+var state = load();
+var ui = {tab:"archive", expanded:null, statusFilter:"all"};
+var logDraft = "";
+
+function load(){
+  try{
+    var saved=localStorage.getItem("formaldehyde_data");
+    if(saved){var p=JSON.parse(saved);return {tracks:(p.tracks||initialTracks()).map(normalizeTrack),history:p.history||{},targetDate:p.targetDate||"",lastBackup:p.lastBackup||null};}
+    var old=localStorage.getItem("formaldehyde_tracks");
+    if(old){var t=JSON.parse(old);if(Array.isArray(t))return {tracks:t.map(normalizeTrack),history:{},targetDate:"",lastBackup:null};}
+  }catch(e){}
+  return {tracks:initialTracks(),history:{},targetDate:"",lastBackup:null};
+}
+function save(){
+  var today=todayISO();
+  if(state.history[today]!==avgProgress())state.history[today]=avgProgress();
+  try{localStorage.setItem("formaldehyde_data",JSON.stringify(state));}catch(e){}
+  scheduleCloudSave();
+}
+// ── auto-sync guards ──
+var syncReady=false;       // becomes true only after a successful cloud load/save
+var cloudTimer=null;
+function isMeaningful(){
+  // true if state holds real work — prevents auto-saving a pristine/default (empty) album over cloud
+  if(state.targetDate)return true;
+  for(var i=0;i<state.tracks.length;i++){
+    var t=state.tracks[i];
+    if(t.notes||t.duration||t.bpm||t.key)return true;
+    if(t.log&&t.log.length)return true;
+    if(t.status!=="in-progress")return true;
+    if(t.vocals&&t.vocals.length)return true;
+    var cr=t.credits;for(var k in cr){if(cr[k])return true;}
+    for(var j=0;j<INSTRUMENTS.length;j++){if(t.instruments[INSTRUMENTS[j]].progress>0)return true;}
+  }
+  return false;
+}
+function scheduleCloudSave(){
+  if(!syncReady)return;            // guard 1: never save before a confirmed cloud load
+  if(!cloudToken())return;
+  if(!isMeaningful())return;       // guard 2: never push an empty/default state
+  clearTimeout(cloudTimer);
+  cloudTimer=setTimeout(autoSaveCloud,2500);
+}
+function autoSaveCloud(){
+  var token=cloudToken();if(!token)return;
+  if(!isMeaningful())return;
+  cloudStatus("автосохранение…","busy");
+  state.lastBackup=new Date().toISOString();
+  try{localStorage.setItem("formaldehyde_data",JSON.stringify(state));}catch(e){}
+  var body=JSON.stringify({description:GIST_DESC,public:false,files:(function(){var o={};o[GIST_FILE]={content:JSON.stringify(state)};return o;})()});
+  var gid=cloudGistId();
+  var ensure=gid?Promise.resolve(gid):discoverGist(token);
+  ensure.then(function(id){
+    if(id)return fetch("https://api.github.com/gists/"+id,{method:"PATCH",headers:ghHeaders(token),body:body}).then(function(r){if(!r.ok)throw new Error("patch");return r.json();});
+    return fetch("https://api.github.com/gists",{method:"POST",headers:ghHeaders(token),body:body}).then(function(r){if(!r.ok)throw new Error("create");return r.json();});
+  }).then(function(g){setCloudGistId(g.id);cloudStatus("сохранено ☁ "+new Date().toLocaleTimeString().slice(0,5),"ok");})
+  .catch(function(){cloudStatus("ошибка автосейва","err");});
+}
+function autoLoadCloud(){
+  var token=cloudToken();if(!token)return;          // no token yet → stay local-only, no auto-save
+  cloudStatus("синхронизация…","busy");
+  var gid=cloudGistId();
+  var ensure=gid?Promise.resolve(gid):discoverGist(token);
+  ensure.then(function(id){
+    if(!id)throw new Error("notfound");
+    setCloudGistId(id);
+    return fetch("https://api.github.com/gists/"+id,{headers:ghHeaders(token)}).then(function(r){if(!r.ok)throw new Error("get");return r.json();});
+  }).then(function(g){
+    var f=g.files&&g.files[GIST_FILE];if(!f)throw new Error("notfound");
+    var p=JSON.parse(f.content);
+    if(p&&p.tracks)state={tracks:p.tracks.map(normalizeTrack),history:p.history||{},targetDate:p.targetDate||"",lastBackup:p.lastBackup||null};
+    else if(Array.isArray(p))state.tracks=p.map(normalizeTrack);
+    syncReady=true;                                 // cloud confirmed → auto-save now allowed
+    ui.expanded=null;try{localStorage.setItem("formaldehyde_data",JSON.stringify(state));}catch(e){}
+    cloudStatus("синхронизировано ☁","ok");render();
+  }).catch(function(e){
+    if(e.message==="notfound"){syncReady=true;cloudStatus(isMeaningful()?"облако пусто — будет создано":"облако пусто","ok");}
+    else{syncReady=false;cloudStatus(e.message==="auth"?"неверный токен":"нет связи с облаком","err");}
+  });
+}
+function avgProgress(){return Math.round(state.tracks.reduce(function(s,t){return s+calcWP(t.instruments);},0)/state.tracks.length);}
+function totalRuntime(){return state.tracks.reduce(function(s,t){return s+parseDur(t.duration);},0);}
+function recordedCount(){return state.tracks.filter(function(t){return ["recorded","done","mixing"].indexOf(t.status)>=0;}).length;}
+function getTrack(id){return state.tracks.filter(function(t){return t.id===id;})[0];}
+
+// ── mutations ──
+function updInstWeight(t,inst,val){
+  var locked=t.locked||{};
+  var lockedSum=INSTRUMENTS.filter(function(k){return k!==inst&&locked[k];}).reduce(function(s,k){return s+t.instruments[k].weight;},0);
+  var maxVal=100-lockedSum;
+  var newVal=Math.min(maxVal,Math.max(0,val));
+  var remaining=100-newVal-lockedSum;
+  var freeOthers=INSTRUMENTS.filter(function(k){return k!==inst&&!locked[k];});
+  var freeTotal=freeOthers.reduce(function(s,k){return s+t.instruments[k].weight;},0);
+  t.instruments[inst].weight=newVal;
+  if(freeOthers.length===0)return;
+  if(freeTotal===0){
+    var even=Math.floor(remaining/freeOthers.length), lo=remaining-even*freeOthers.length;
+    freeOthers.forEach(function(k,i){t.instruments[k].weight=Math.max(0,even+(i===0?lo:0));});
+  }else{
+    var alloc=0;
+    freeOthers.forEach(function(k,i){
+      if(i===freeOthers.length-1){t.instruments[k].weight=Math.max(0,remaining-alloc);}
+      else{var w=Math.round(t.instruments[k].weight/freeTotal*remaining);t.instruments[k].weight=Math.max(0,w);alloc+=w;}
+    });
+  }
+}
+
+// ── stats compute ──
+function instAvgs(){var o={};INSTRUMENTS.forEach(function(k){
+  var rel=state.tracks.filter(function(t){return t.instruments[k].weight>0;});
+  if(!rel.length){o[k]=0;return;}
+  var ws=rel.reduce(function(s,t){return s+t.instruments[k].weight;},0);
+  var wd=rel.reduce(function(s,t){return s+t.instruments[k].weight*t.instruments[k].progress;},0);
+  o[k]=Math.round(wd/ws);
+});return o;}
+function instWeightAvgs(){var o={};INSTRUMENTS.forEach(function(k){
+  var rel=state.tracks.filter(function(t){return t.instruments[k].weight>0;});
+  o[k]=rel.length?Math.round(rel.reduce(function(s,t){return s+t.instruments[k].weight;},0)/rel.length):0;
+});return o;}
+function parsePos(str){return (!str||!str.trim())?[]:str.split(",").map(function(s){return s.trim();}).filter(Boolean);}
+function posWeight(pos,total){return total===1?1:(pos===0?0.8:0.2/(total-1));}
+function recordingPct(){
+  var c={};PERSONS.forEach(function(p){c[p]=0;});var pool=0;
+  state.tracks.forEach(function(t){
+    var tt=INSTRUMENTS.reduce(function(s,k){return s+t.instruments[k].weight;},0);if(tt===0)return;
+    INSTRUMENTS.forEach(function(k){
+      var iw=t.instruments[k].weight;if(iw===0)return;
+      if(k==="vocals"){
+        var lead=parsePos(t.credits.lead_vocals),bg=parsePos(t.credits.background_vocals);
+        var lp=iw*0.9,bp=iw*0.1;pool+=lp+bp;
+        lead.forEach(function(p,i){if(c[p]!=null)c[p]+=lp*posWeight(i,lead.length);});
+        bg.forEach(function(p,i){if(c[p]!=null)c[p]+=bp*posWeight(i,bg.length);});
+      }else{
+        var ppl=parsePos(t.credits[k]);pool+=iw;
+        ppl.forEach(function(p,i){if(c[p]!=null)c[p]+=iw*posWeight(i,ppl.length);});
+      }
+    });
+  });
+  var pct={};PERSONS.forEach(function(p){pct[p]=pool>0?Math.round(c[p]/pool*100):0;});return pct;
+}
+function authorship(field){
+  var c={};PERSONS.forEach(function(p){c[p]=0;});var pool=0;
+  state.tracks.forEach(function(t){var ppl=parsePos(t.credits[field]);if(!ppl.length)return;pool+=1;ppl.forEach(function(p,i){if(c[p]!=null)c[p]+=posWeight(i,ppl.length);});});
+  var pct={};PERSONS.forEach(function(p){pct[p]=pool>0?Math.round(c[p]/pool*100):0;});return pct;
+}
+function historySeries(){return Object.keys(state.history).map(function(d){return {date:d,value:state.history[d]};}).sort(function(a,b){return a.date<b.date?-1:1;});}
+function forecast(){
+  var h=historySeries();if(h.length<2)return null;
+  var f=h[0],l=h[h.length-1],span=daysBetween(f.date,l.date);
+  if(span<=0)return null;
+  var rate=(l.value-f.value)/span;
+  if(rate<=0.01)return {rate:rate.toFixed(1),stalled:true};
+  var daysLeft=Math.ceil((100-l.value)/rate);
+  var proj=new Date();proj.setDate(proj.getDate()+daysLeft);
+  return {rate:rate.toFixed(1),daysLeft:daysLeft,projISO:proj.toISOString().slice(0,10)};
+}
+
+// ── SVG ──
+function radarSVG(values){
+  var size=230,cx=size/2,cy=size/2,r=size/2-38,n=INSTRUMENTS.length;
+  function ang(i){return Math.PI*2*i/n-Math.PI/2;}
+  function pt(i,v){var a=ang(i),rr=v/100*r;return [cx+rr*Math.cos(a),cy+rr*Math.sin(a)];}
+  var s='<svg width="'+size+'" height="'+size+'">';
+  [0.25,0.5,0.75,1].forEach(function(lvl){s+='<polygon points="'+INSTRUMENTS.map(function(_,i){return pt(i,100*lvl).join(",");}).join(" ")+'" fill="none" stroke="#1e241e" stroke-width="1"/>';});
+  INSTRUMENTS.forEach(function(k,i){var p=pt(i,100);s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+p[0]+'" y2="'+p[1]+'" stroke="#1e241e" stroke-width="1"/>';});
+  var dp=INSTRUMENTS.map(function(k,i){return pt(i,values[k]);});
+  s+='<polygon points="'+dp.map(function(p){return p.join(",");}).join(" ")+'" fill="rgba(122,171,138,0.18)" stroke="#7aab8a" stroke-width="1.5"/>';
+  dp.forEach(function(p){s+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="2.5" fill="#7aab8a"/>';});
+  INSTRUMENTS.forEach(function(k,i){var p=pt(i,120);s+='<text x="'+p[0]+'" y="'+p[1]+'" fill="#4a574a" font-size="8" font-family="monospace" text-anchor="middle" dominant-baseline="middle">'+INSTRUMENT_SHORT[k]+" "+values[k]+'%</text>';});
+  return s+"</svg>";
+}
+function lineSVG(data){
+  var W=840,H=160,pL=28,pR=12,pT=12,pB=22,w=W-pL-pR,h=H-pT-pB;
+  if(!data.length)return '<div class="stat-sub">нет данных — прогресс начнёт записываться с сегодняшнего дня</div>';
+  var xs=data.map(function(_,i){return data.length===1?pL+w/2:pL+i/(data.length-1)*w;});
+  function yF(v){return pT+h-v/100*h;}
+  var pts=data.map(function(d,i){return [xs[i],yF(d.value)];});
+  var path=pts.map(function(p,i){return (i===0?"M":"L")+p[0]+" "+p[1];}).join(" ");
+  var area=path+" L "+xs[xs.length-1]+" "+(pT+h)+" L "+xs[0]+" "+(pT+h)+" Z";
+  var s='<svg width="100%" viewBox="0 0 '+W+" "+H+'" preserveAspectRatio="xMidYMid meet">';
+  [0,25,50,75,100].forEach(function(v){s+='<line x1="'+pL+'" y1="'+yF(v)+'" x2="'+(W-pR)+'" y2="'+yF(v)+'" stroke="#161c16" stroke-width="1"/><text x="'+(pL-6)+'" y="'+yF(v)+'" fill="#3a4a3a" font-size="7" font-family="monospace" text-anchor="end" dominant-baseline="middle">'+v+'</text>';});
+  s+='<path d="'+area+'" fill="rgba(122,171,138,0.10)"/><path d="'+path+'" fill="none" stroke="#7aab8a" stroke-width="1.5"/>';
+  pts.forEach(function(p){s+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="2" fill="#7aab8a"/>';});
+  data.forEach(function(d,i){if(i===0||i===data.length-1||data.length<=6){s+='<text x="'+xs[i]+'" y="'+(H-7)+'" fill="#3a4a3a" font-size="7" font-family="monospace" text-anchor="middle">'+fmtDate(d.date).slice(0,5)+'</text>';}});
+  return s+"</svg>";
+}
+
+// ── render ──
+function headerHTML(){
+  var dtt=state.targetDate?daysBetween(todayISO(),state.targetDate):null;
+  var bDays=state.lastBackup?daysBetween(state.lastBackup,new Date().toISOString()):null;
+  var bStale=bDays===null||bDays>=7;
+  var bText=state.lastBackup?(bDays===0?"сегодня":bDays+" дн. назад"):"не делался";
+  var h='<div class="hdr"><div class="hdr-stamp">ИСТОРИЯ БОЛЕЗНИ № 002 — АРХИВ САНАТОРИЯ ТАРАСКУЛЬ</div>';
+  h+='<div class="hdr-title">САНАТОРИЙ <em>ТАРАСКУЛЬ</em></div><div class="hdr-sub">ФОРМАЛЬДЕГИД</div>';
+  h+='<div class="hdr-meta"><div class="hdr-meta-item">ТРЕКОВ: <span>9</span></div>';
+  h+='<div class="hdr-meta-item">ЗАПИСАНО: <span id="hrec">'+recordedCount()+'/9</span></div>';
+  h+='<div class="hdr-meta-item">ПРОГРЕСС: <span id="hp">'+avgProgress()+'%</span></div>';
+  h+='<div class="hdr-meta-item">ХРОНОМЕТРАЖ: <span id="hr">'+fmtDur(totalRuntime())+'</span></div>';
+  if(dtt!==null)h+='<div class="hdr-meta-item">ДО РЕЛИЗА: <span class="'+(dtt<0?"warn":"")+'">'+(dtt<0?("просрочен "+(-dtt)+" дн."):(dtt+" дн."))+'</span></div>';
+  h+='</div><div class="io-row"><button class="io-btn" data-act="export">↓ ЭКСПОРТ (В БУФЕР)</button>';
+  h+='<label class="io-btn" style="cursor:pointer">↑ ИМПОРТ JSON<input type="file" accept=".json" data-act="import" style="display:none"></label>';
+  h+='<button class="io-btn danger" data-act="reset">✕ СБРОС</button>';
+  h+='<span class="backup-tag '+(bStale?"stale":"")+'">БЭКАП: '+bText+(bStale?" ⚠":"")+'</span></div>';
+  h+='<div class="io-row"><input id="ghtoken" class="io-token" type="password" placeholder="GitHub токен (gist)" value="'+escA(cloudToken())+'">';
+  h+='<button class="io-btn" data-act="cloud-save">☁ СОХРАНИТЬ</button><button class="io-btn" data-act="cloud-load">☁ ЗАГРУЗИТЬ</button>';
+  h+='<span id="cloud-status" class="cloud-status"></span></div></div>';
+  h+='<div class="tabs"><button class="tab '+(ui.tab==="archive"?"active":"")+'" data-act="tab" data-tab="archive">АРХИВ</button>';
+  h+='<button class="tab '+(ui.tab==="stats"?"active":"")+'" data-act="tab" data-tab="stats">СТАТИСТИКА</button></div>';
+  return h;
+}
+
+function instRowHTML(t,k){
+  var inst=t.instruments[k],locked=!!(t.locked||{})[k];
+  var s='<div class="inst-row"><div class="inst-name">'+INSTRUMENT_LABELS[k]+'</div><div class="inst-bar-wrap">';
+  s+='<div class="inst-sub"><span>ВАЖНОСТЬ</span><input class="inst-num inst-num-w" type="number" min="0" max="100" '+(locked?"disabled":"")+' value="'+inst.weight+'" data-inp="weight" data-id="'+t.id+'" data-inst="'+k+'"></div>';
+  s+='<input type="range" class="rw" min="0" max="100" value="'+inst.weight+'" style="--val:'+inst.weight+'%" '+(locked?"disabled":"")+' data-inp="weight" data-id="'+t.id+'" data-inst="'+k+'">';
+  s+='<div class="inst-sub" style="margin-top:4px"><span>ГОТОВНОСТЬ</span><input class="inst-num" type="number" min="0" max="100" value="'+inst.progress+'" data-inp="progress" data-id="'+t.id+'" data-inst="'+k+'"></div>';
+  s+='<input type="range" class="rp" min="0" max="100" value="'+inst.progress+'" style="--val:'+inst.progress+'%" data-inp="progress" data-id="'+t.id+'" data-inst="'+k+'">';
+  s+='</div><button class="lock-btn '+(locked?"locked":"")+'" data-act="lock" data-id="'+t.id+'" data-inst="'+k+'">'+(locked?"■":"□")+'</button></div>';
+  return s;
+}
+
+function metaLineHTML(t){
+  var s="";
+  if(t.duration)s+='<span class="t-dur">'+esc(t.duration)+'</span>';
+  if(t.bpm)s+='<span class="t-dur">'+esc(t.bpm)+' BPM</span>';
+  if(t.key)s+='<span class="t-dur">'+esc(t.key)+'</span>';
+  return s;
+}
+
+function detailHTML(t){
+  var wp=calcWP(t.instruments);
+  var s='<div class="detail">';
+  s+='<div><div class="d-label">НАЗВАНИЕ</div><input class="t-title-input" value="'+escA(t.title)+'" data-inp="title" data-id="'+t.id+'"></div>';
+  s+='<div class="d-grid3"><div><div class="d-label">ДЛИТЕЛЬНОСТЬ (М:СС)</div><input class="field-input" value="'+escA(t.duration)+'" placeholder="3:45" data-inp="duration" data-id="'+t.id+'"></div>';
+  s+='<div><div class="d-label">BPM</div><input class="field-input" value="'+escA(t.bpm)+'" placeholder="140" data-inp="bpm" data-id="'+t.id+'"></div>';
+  s+='<div><div class="d-label">ТОНАЛЬНОСТЬ</div><input class="field-input" value="'+escA(t.key)+'" placeholder="F#m" data-inp="key" data-id="'+t.id+'"></div></div>';
+  s+='<div><div class="d-label">СТАТУС</div><div class="s-btns">';
+  Object.keys(STATUS_LABELS).forEach(function(k){s+='<button class="s-btn '+(t.status===k?"active":"")+'" data-act="status" data-id="'+t.id+'" data-val="'+k+'">'+STATUS_LABELS[k]+'</button>';});
+  s+='</div></div>';
+  s+='<div><div class="d-label">ВОКАЛ (ИСПОЛНИТЕЛЬ)</div><div class="v-btns">';
+  VOCAL_OPTIONS.forEach(function(v){s+='<button class="v-btn '+(t.vocals.indexOf(v)>=0?"active":"")+'" data-act="vocal" data-id="'+t.id+'" data-val="'+v+'">'+v+'</button>';});
+  s+='</div></div>';
+  s+='<div><div class="d-section-title">В РАБОТЕ — ИНСТРУМЕНТЫ</div><div class="inst-table">';
+  INSTRUMENTS.forEach(function(k){s+=instRowHTML(t,k);});
+  s+='<div class="wtotal-row"><div class="wtotal-label">ИТОГО</div><div class="wtotal-bar"><div class="wtotal-fill" id="tf-'+t.id+'" style="width:'+wp+'%"></div></div><div class="wtotal-val" id="tv-'+t.id+'">'+wp+'%</div></div>';
+  s+='</div></div>';
+  s+='<div><div class="d-section-title">SONG CREDITS</div><div class="credits-grid">';
+  [["guitars","GUITARS"],["lead_vocals","LEAD VOCALS"],["background_vocals","BG VOCALS"],["drums","DRUMS"],["synths","SYNTHS"],["bass","BASS"],["lyrics","LYRICS BY"],["music","MUSIC BY"]].forEach(function(pair){
+    var k=pair[0];
+    s+='<div class="credit-row"><div class="credit-label">'+pair[1]+'</div><input class="field-input" value="'+escA(t.credits[k])+'" placeholder="—" data-inp="credit" data-id="'+t.id+'" data-key="'+k+'">';
+    s+='<div class="credit-quick"><button class="credit-quick-btn" data-act="credit-add" data-id="'+t.id+'" data-key="'+k+'" data-name="Jesse Foster">JF</button><button class="credit-quick-btn" data-act="credit-add" data-id="'+t.id+'" data-key="'+k+'" data-name="Aleksandr Simbirskiy">AS</button></div></div>';
+  });
+  s+='</div></div>';
+  s+='<div><div class="d-section-title">ЖУРНАЛ ИЗМЕНЕНИЙ</div>';
+  if(t.log.length){s+='<div class="log-list">';t.log.forEach(function(e,i){s+='<div class="log-entry"><span class="log-date">'+fmtDate(e.date)+'</span><span class="log-text">'+esc(e.text)+'</span><button class="log-del" data-act="log-del" data-id="'+t.id+'" data-idx="'+i+'">✕</button></div>';});s+='</div>';}
+  s+='<div class="log-input-row"><input class="field-input" id="logdraft" value="'+escA(logDraft)+'" placeholder="что сделано за сессию..." data-inp="logdraft"><button class="log-add" data-act="log-add" data-id="'+t.id+'">+</button></div></div>';
+  s+='<div><div class="d-label">ЗАМЕТКИ</div><textarea class="notes-ta" placeholder="..." data-inp="notes" data-id="'+t.id+'">'+esc(t.notes)+'</textarea></div>';
+  s+='</div>';
+  return s;
+}
+
+function rowHTML(t){
+  var wp=calcWP(t.instruments),open=ui.expanded===t.id;
+  var s='<div>';
+  s+='<div class="track-row '+(open?"open":"")+'" data-act="expand" data-id="'+t.id+'">';
+  s+='<div class="t-num">'+String(t.id).padStart(2,"0")+'</div>';
+  s+='<div style="min-width:0;overflow:hidden"><div class="t-title" id="rt-'+t.id+'">'+esc(t.title)+'</div>';
+  s+='<div class="t-meta-line" id="rm-'+t.id+'">'+metaLineHTML(t)+'</div>';
+  s+='<div class="t-wprog"><div class="t-wprog-fill" id="rw-'+t.id+'" style="width:'+wp+'%"></div></div></div>';
+  s+='<div class="t-status" style="color:'+STATUS_COLORS[t.status]+';border-color:'+STATUS_COLORS[t.status]+'44">'+STATUS_LABELS[t.status]+'</div>';
+  s+='<div class="t-vocals '+(t.vocals.length?"has":"")+'">'+(t.vocals.length?t.vocals.join("+"):"—")+'</div>';
+  s+='<div class="t-arr">'+(open?"▲":"▼")+'</div></div>';
+  if(open)s+=detailHTML(t);
+  return s+'</div>';
+}
+
+function archiveHTML(){
+  var sc={};Object.keys(STATUS_LABELS).forEach(function(k){sc[k]=state.tracks.filter(function(t){return t.status===k;}).length;});
+  var vis=state.tracks.filter(function(t){return ui.statusFilter==="all"||t.status===ui.statusFilter;});
+  var s='<div class="section"><div class="arc-hdr"><div class="arc-label">ЖУРНАЛ ТРЕКОВ</div>';
+  s+='<div class="pbar-wrap"><div class="pbar-label"><span>ОБЩИЙ ПРОГРЕСС</span><span style="color:#7aab8a">'+avgProgress()+'%</span></div><div class="pbar"><div class="pbar-fill" style="width:'+avgProgress()+'%"></div></div></div></div>';
+  s+='<div class="filter-bar"><span class="filter-label">СТАТУС</span><button class="filter-chip '+(ui.statusFilter==="all"?"active":"")+'" data-act="fstatus" data-val="all">ВСЕ</button>';
+  Object.keys(STATUS_LABELS).forEach(function(k){if(sc[k]>0)s+='<button class="filter-chip '+(ui.statusFilter===k?"active":"")+'" data-act="fstatus" data-val="'+k+'">'+STATUS_LABELS[k]+'</button>';});
+  s+='</div><div class="track-list">';
+  vis.forEach(function(t){s+=rowHTML(t);});
+  if(!vis.length)s+='<div class="empty">нет треков по выбранным фильтрам</div>';
+  s+='</div></div>';
+  return s;
+}
+
+function statsHTML(){
+  var sc={};Object.keys(STATUS_LABELS).forEach(function(k){sc[k]=state.tracks.filter(function(t){return t.status===k;}).length;});
+  var ia=instAvgs(),iw=instWeightAvgs(),rp=recordingPct(),mp=authorship("music"),lp=authorship("lyrics");
+  var hs=historySeries(),fc=forecast();
+  var dtt=state.targetDate?daysBetween(todayISO(),state.targetDate):null;
+  var s='<div class="section">';
+  // history
+  s+='<div class="stat-card full-card" style="margin-bottom:16px"><div class="stat-card-label">ДИНАМИКА ЗАПИСИ</div>'+lineSVG(hs)+'</div>';
+  // deadline + forecast
+  s+='<div class="stats-grid"><div class="stat-card"><div class="stat-card-label">ДЕДЛАЙН РЕЛИЗА</div>';
+  s+='<input class="deadline-input" type="date" value="'+escA(state.targetDate)+'" data-inp="target">';
+  if(dtt!==null)s+='<div class="forecast-line" style="margin-top:12px">'+(dtt<0?('<span class="forecast-bad">просрочен на <b>'+(-dtt)+'</b> дн.</span>'):('осталось <b>'+dtt+'</b> дн.'))+'</div>';
+  s+='</div><div class="stat-card"><div class="stat-card-label">ПРОГНОЗ ПО ТЕМПУ</div>';
+  if(!fc)s+='<div class="stat-sub">нужно минимум 2 дня истории для расчёта темпа</div>';
+  else if(fc.stalled)s+='<div class="forecast-line"><span class="forecast-bad">прогресс стоит на месте</span> — прогноз невозможен</div>';
+  else{s+='<div class="forecast-line">темп: <b>'+fc.rate+'%</b> в день<br>до 100%: <b>'+fc.daysLeft+'</b> дн.<br>готовность к <b>'+fmtDate(fc.projISO)+'</b>';
+    if(state.targetDate)s+=(fc.projISO<=state.targetDate?'<div class="forecast-ok" style="margin-top:4px">✓ успеваешь к дедлайну</div>':'<div class="forecast-bad" style="margin-top:4px">✕ не успеваешь к дедлайну</div>');
+    s+='</div>';}
+  s+='</div></div>';
+  // overall + radar
+  s+='<div class="stats-grid"><div class="stat-card"><div class="stat-card-label">ОБЩИЙ ПРОГРЕСС</div><div class="stat-big">'+avgProgress()+'%</div><div class="stat-sub">взвешенный по важности инструментов</div><div style="margin-top:14px">';
+  Object.keys(STATUS_LABELS).forEach(function(k){if(sc[k]>0)s+='<div style="margin-bottom:6px"><div class="stat-row"><div class="stat-row-label">'+STATUS_LABELS[k]+'</div><div class="stat-row-val">'+sc[k]+'</div></div><div class="stat-mini-bar"><div class="stat-mini-fill" style="width:'+(sc[k]/9*100)+'%;background:'+STATUS_COLORS[k]+'"></div></div></div>';});
+  s+='</div></div><div class="stat-card"><div class="stat-card-label">КАРТА ГОТОВНОСТИ</div><div class="radar-wrap">'+radarSVG(ia)+'</div></div></div>';
+  // instruments + contribution
+  s+='<div class="stats-grid"><div class="stat-card"><div class="stat-card-label">СРЕДНЯЯ ВАЖНОСТЬ ИНСТРУМЕНТОВ</div><div class="inst-dist">';
+  INSTRUMENTS.forEach(function(k){s+='<div class="inst-dist-row"><div class="inst-dist-label">'+INSTRUMENT_LABELS[k]+'</div><div class="inst-dist-bar"><div class="inst-dist-fill" style="width:'+iw[k]+'%;background:#3a4a3a"></div></div><div class="inst-dist-val" style="color:#4a574a">'+iw[k]+'%</div></div>';});
+  s+='</div></div>';
+  s+='<div class="stat-card"><div class="stat-card-label">АВТОРСТВО — МУЗЫКА</div>';
+  PERSONS.forEach(function(p){s+='<div class="contrib-row"><div class="contrib-label">'+PERSON_TAGS[p]+'</div><div class="contrib-bar"><div class="contrib-fill" style="width:'+mp[p]+'%"></div></div><div class="contrib-val">'+mp[p]+'%</div></div>';});
+  s+='<div class="contrib-divider"></div><div class="stat-card-label" style="margin-bottom:8px">АВТОРСТВО — ТЕКСТЫ</div>';
+  PERSONS.forEach(function(p){s+='<div class="contrib-row"><div class="contrib-label">'+PERSON_TAGS[p]+'</div><div class="contrib-bar"><div class="contrib-fill" style="width:'+lp[p]+'%"></div></div><div class="contrib-val">'+lp[p]+'%</div></div>';});
+  s+='</div></div>';
+  // per track
+  s+='<div class="stat-card full-card"><div class="stat-card-label" style="margin-bottom:12px">ПРОГРЕСС ПО ТРЕКАМ</div><div class="timeline">';
+  state.tracks.forEach(function(t){var wp=calcWP(t.instruments);s+='<div class="tl-row"><div class="tl-num">'+String(t.id).padStart(2,"0")+'</div><div class="tl-title">'+esc(t.title)+'</div><div class="tl-bar"><div class="tl-bar-fill" style="width:'+wp+'%"></div></div><div class="tl-pct">'+wp+'%</div></div>';});
+  s+='</div></div></div>';
+  return s;
+}
+
+
+// ── cloud sync (GitHub Gist) ──
+var GIST_FILE="formaldehyde_sync.json";
+var GIST_DESC="Sanatoriy Taraskul - Formaldehyde sync";
+function cloudToken(){try{return localStorage.getItem("fmd_gh_token")||"";}catch(e){return "";}}
+function setCloudToken(v){try{localStorage.setItem("fmd_gh_token",v);}catch(e){}}
+function cloudGistId(){try{return localStorage.getItem("fmd_gist_id")||"";}catch(e){return "";}}
+function setCloudGistId(v){try{localStorage.setItem("fmd_gist_id",v);}catch(e){}}
+function cloudStatus(msg,kind){var el=document.getElementById("cloud-status");if(el){el.textContent=msg;el.className="cloud-status "+(kind||"");}}
+function ghHeaders(token){return {"Authorization":"Bearer "+token,"Accept":"application/vnd.github+json","Content-Type":"application/json"};}
+
+function discoverGist(token){
+  return fetch("https://api.github.com/gists?per_page=100",{headers:ghHeaders(token)})
+    .then(function(r){if(!r.ok)throw new Error("auth");return r.json();})
+    .then(function(list){
+      for(var i=0;i<list.length;i++){if(list[i].files&&list[i].files[GIST_FILE])return list[i].id;}
+      return null;
+    });
+}
+function saveCloud(){
+  var token=cloudToken();
+  if(!token){cloudStatus("введи токен","err");return;}
+  cloudStatus("сохранение…","busy");
+  state.lastBackup=new Date().toISOString();save();
+  var body=JSON.stringify({description:GIST_DESC,public:false,files:(function(){var o={};o[GIST_FILE]={content:JSON.stringify(state)};return o;})()});
+  var gid=cloudGistId();
+  var ensure=gid?Promise.resolve(gid):discoverGist(token);
+  ensure.then(function(id){
+    if(id){
+      return fetch("https://api.github.com/gists/"+id,{method:"PATCH",headers:ghHeaders(token),body:body}).then(function(r){if(!r.ok)throw new Error("patch");return r.json();});
+    }else{
+      return fetch("https://api.github.com/gists",{method:"POST",headers:ghHeaders(token),body:body}).then(function(r){if(!r.ok)throw new Error("create");return r.json();});
+    }
+  }).then(function(g){setCloudGistId(g.id);syncReady=true;cloudStatus("сохранено ☁ "+new Date().toLocaleTimeString().slice(0,5),"ok");render();})
+  .catch(function(e){cloudStatus(e.message==="auth"?"неверный токен":"ошибка сохранения","err");});
+}
+function loadCloud(){
+  var token=cloudToken();
+  if(!token){cloudStatus("введи токен","err");return;}
+  cloudStatus("загрузка…","busy");
+  var gid=cloudGistId();
+  var ensure=gid?Promise.resolve(gid):discoverGist(token);
+  ensure.then(function(id){
+    if(!id)throw new Error("notfound");
+    setCloudGistId(id);
+    return fetch("https://api.github.com/gists/"+id,{headers:ghHeaders(token)}).then(function(r){if(!r.ok)throw new Error("get");return r.json();});
+  }).then(function(g){
+    var f=g.files&&g.files[GIST_FILE];if(!f)throw new Error("notfound");
+    var p=JSON.parse(f.content);
+    if(Array.isArray(p))state.tracks=p.map(normalizeTrack);
+    else if(p.tracks)state={tracks:p.tracks.map(normalizeTrack),history:p.history||{},targetDate:p.targetDate||"",lastBackup:p.lastBackup||null};
+    ui.expanded=null;syncReady=true;save();cloudStatus("загружено ☁","ok");render();
+  }).catch(function(e){cloudStatus(e.message==="notfound"?"облако пусто — сначала сохрани":(e.message==="auth"?"неверный токен":"ошибка загрузки"),"err");});
+}
+
+function render(){
+  var root=document.getElementById("root");
+  root.innerHTML=headerHTML()+(ui.tab==="archive"?archiveHTML():statsHTML());
+  save();
+}
+
+// in-place patches (no re-render) for smooth typing/dragging
+function patchHeader(){
+  var hp=document.getElementById("hp");if(hp)hp.textContent=avgProgress()+"%";
+  var hr=document.getElementById("hr");if(hr)hr.textContent=fmtDur(totalRuntime());
+  var hrec=document.getElementById("hrec");if(hrec)hrec.textContent=recordedCount()+"/9";
+}
+function patchInstruments(t){
+  INSTRUMENTS.forEach(function(k){
+    var inst=t.instruments[k];
+    document.querySelectorAll('[data-inp="weight"][data-id="'+t.id+'"][data-inst="'+k+'"]').forEach(function(el){
+      if(el.type==="range"){el.value=inst.weight;el.style.setProperty("--val",inst.weight+"%");}
+      else if(document.activeElement!==el){el.value=inst.weight;}
+    });
+    document.querySelectorAll('[data-inp="progress"][data-id="'+t.id+'"][data-inst="'+k+'"]').forEach(function(el){
+      if(el.type==="range"){el.value=inst.progress;el.style.setProperty("--val",inst.progress+"%");}
+      else if(document.activeElement!==el){el.value=inst.progress;}
+    });
+  });
+  var wp=calcWP(t.instruments);
+  var tf=document.getElementById("tf-"+t.id);if(tf)tf.style.width=wp+"%";
+  var tv=document.getElementById("tv-"+t.id);if(tv)tv.textContent=wp+"%";
+  var rw=document.getElementById("rw-"+t.id);if(rw)rw.style.width=wp+"%";
+}
+function patchRowMeta(t){
+  var rt=document.getElementById("rt-"+t.id);if(rt)rt.textContent=t.title;
+  var rm=document.getElementById("rm-"+t.id);if(rm)rm.innerHTML=metaLineHTML(t);
+}
+
+// ── events ──
+var root=document.getElementById("root");
+
+root.addEventListener("click",function(e){
+  var el=e.target.closest("[data-act]");if(!el)return;
+  var act=el.getAttribute("data-act");
+  var id=el.getAttribute("data-id");id=id!=null?parseInt(id,10):null;
+  var t=id!=null?getTrack(id):null;
+  if(act==="tab"){ui.tab=el.getAttribute("data-tab");ui.expanded=null;render();return;}
+  if(act==="expand"){ui.expanded=ui.expanded===id?null:id;logDraft="";render();return;}
+  if(act==="status"){t.status=el.getAttribute("data-val");render();return;}
+  if(act==="vocal"){var v=el.getAttribute("data-val");var j=t.vocals.indexOf(v);if(j>=0)t.vocals.splice(j,1);else t.vocals.push(v);render();return;}
+  if(act==="lock"){var k=el.getAttribute("data-inst");t.locked=t.locked||{};t.locked[k]=!t.locked[k];render();return;}
+  if(act==="credit-add"){var key=el.getAttribute("data-key"),name=el.getAttribute("data-name");var cur=t.credits[key];var already=cur.split(",").map(function(x){return x.trim();}).indexOf(name)>=0;if(!already)t.credits[key]=cur?cur+", "+name:name;render();return;}
+  if(act==="log-add"){if(logDraft.trim()){t.log.unshift({date:todayISO(),text:logDraft.trim()});logDraft="";}render();return;}
+  if(act==="log-del"){var idx=parseInt(el.getAttribute("data-idx"),10);t.log.splice(idx,1);render();return;}
+  if(act==="fstatus"){ui.statusFilter=el.getAttribute("data-val");render();return;}
+  if(act==="cloud-save"){saveCloud();return;}
+  if(act==="cloud-load"){loadCloud();return;}
+  if(act==="export"){doExport();return;}
+  if(act==="reset"){if(confirm("Сбросить все данные до начальных? История и бэкап-метки тоже удалятся.")){state={tracks:initialTracks(),history:{},targetDate:"",lastBackup:null};try{localStorage.removeItem("formaldehyde_data");localStorage.removeItem("formaldehyde_tracks");}catch(x){}ui.expanded=null;render();}return;}
+});
+
+root.addEventListener("input",function(e){
+  var el=e.target;
+  if(el.id==="ghtoken"){setCloudToken(el.value);return;}
+  var inp=el.getAttribute("data-inp");if(!inp)return;
+  var id=el.getAttribute("data-id");id=id!=null?parseInt(id,10):null;
+  var t=id!=null?getTrack(id):null;
+  if(inp==="weight"||inp==="progress"){
+    var k=el.getAttribute("data-inst");var val=Math.min(100,Math.max(0,Number(el.value)));
+    if(inp==="weight"){if((t.locked||{})[k])return;updInstWeight(t,k,val);}
+    else{t.instruments[k].progress=val;}
+    patchInstruments(t);patchHeader();save();return;
+  }
+  if(inp==="title"){t.title=el.value;patchRowMeta(t);save();return;}
+  if(inp==="duration"){t.duration=el.value;patchRowMeta(t);patchHeader();save();return;}
+  if(inp==="bpm"){t.bpm=el.value;patchRowMeta(t);save();return;}
+  if(inp==="key"){t.key=el.value;patchRowMeta(t);save();return;}
+  if(inp==="credit"){t.credits[el.getAttribute("data-key")]=el.value;save();return;}
+  if(inp==="notes"){t.notes=el.value;save();return;}
+  if(inp==="logdraft"){logDraft=el.value;return;}
+  if(inp==="target"){state.targetDate=el.value;render();return;}
+});
+
+root.addEventListener("keydown",function(e){
+  if(e.key==="Enter"&&e.target.getAttribute("data-inp")==="logdraft"){
+    var draftInput=e.target;var row=draftInput.closest(".log-input-row");var btn=row?row.querySelector('[data-act="log-add"]'):null;
+    if(btn)btn.click();
+  }
+});
+
+root.addEventListener("change",function(e){
+  var el=e.target;
+  if(el.getAttribute("data-act")==="import"){
+    var f=el.files[0];if(!f)return;var r=new FileReader();
+    r.onload=function(ev){try{var p=JSON.parse(ev.target.result);
+      if(Array.isArray(p))state.tracks=p.map(normalizeTrack);
+      else if(p.tracks)state={tracks:p.tracks.map(normalizeTrack),history:p.history||{},targetDate:p.targetDate||"",lastBackup:p.lastBackup||null};
+      ui.expanded=null;render();
+    }catch(x){alert("Ошибка чтения файла");}};
+    r.readAsText(f);el.value="";
+  }
+});
+
+function doExport(){
+  state.lastBackup=new Date().toISOString();save();
+  var json=JSON.stringify(state,null,2);
+  // Try clipboard first (works on mobile file://), fall back to download
+  function fallbackDownload(){
+    try{
+      var blob=new Blob([json],{type:"application/json"});
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement("a");a.href=url;a.download="formaldehyde_backup_"+todayISO()+".json";
+      document.body.appendChild(a);a.click();document.body.removeChild(a);
+      setTimeout(function(){URL.revokeObjectURL(url);},1000);
+      cloudStatus("файл скачан","ok");
+    }catch(e){
+      // last resort: open in new tab to copy manually
+      try{var w=window.open();w.document.write("<pre>"+json.replace(/</g,"&lt;")+"</pre>");cloudStatus("открыт в новой вкладке","ok");}
+      catch(e2){cloudStatus("не удалось экспортировать","err");}
+    }
+  }
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(json).then(function(){
+      cloudStatus("JSON скопирован в буфер","ok");render();
+    }).catch(function(){fallbackDownload();render();});
+  }else{fallbackDownload();render();}
+}
+
+render();
+// On startup, if a token is saved, pull the latest from cloud before enabling auto-save
+autoLoadCloud();
+</script>
+</body>
+</html>
