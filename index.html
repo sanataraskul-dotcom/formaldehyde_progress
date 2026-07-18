@@ -480,9 +480,15 @@ function historySeries(){return Object.keys(state.history).map(function(d){retur
 function forecast(){
   var h=historySeries();if(h.length<2)return null;
   var last=h[h.length-1];
-  // Only look at a recent window — old slow/flat stretches shouldn't drag down today's pace
-  var WINDOW_DAYS=14;
-  var win=h.filter(function(p){return daysBetween(p.date,last.date)<=WINDOW_DAYS;});
+  // Only look at a recent window — old slow/flat stretches shouldn't drag down today's pace.
+  // With sparse/irregular snapshots a pure calendar cutoff can land right after a jump and
+  // miss it entirely, so also guarantee a minimum number of points and take whichever
+  // boundary (by days or by count) reaches further back.
+  var WINDOW_DAYS=21,MIN_POINTS=8;
+  var cutoffByDays=new Date(last.date);cutoffByDays.setDate(cutoffByDays.getDate()-WINDOW_DAYS);
+  var cutoffByCount=h.length>MIN_POINTS?new Date(h[h.length-MIN_POINTS].date):new Date(h[0].date);
+  var cutoff=new Date(Math.min(cutoffByDays.getTime(),cutoffByCount.getTime()));
+  var win=h.filter(function(p){return new Date(p.date)>=cutoff;});
   if(win.length<2)win=h.slice(-2);
   var first=win[0];
   var totalSpan=daysBetween(first.date,last.date);
