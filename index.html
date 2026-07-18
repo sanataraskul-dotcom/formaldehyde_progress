@@ -479,17 +479,22 @@ function authorship(field){
 function historySeries(){return Object.keys(state.history).map(function(d){return {date:d,value:state.history[d]};}).sort(function(a,b){return a.date<b.date?-1:1;});}
 function forecast(){
   var h=historySeries();if(h.length<2)return null;
-  var first=h[0],last=h[h.length-1];
+  var last=h[h.length-1];
+  // Only look at a recent window — old slow/flat stretches shouldn't drag down today's pace
+  var WINDOW_DAYS=14;
+  var win=h.filter(function(p){return daysBetween(p.date,last.date)<=WINDOW_DAYS;});
+  if(win.length<2)win=h.slice(-2);
+  var first=win[0];
   var totalSpan=daysBetween(first.date,last.date);
   if(totalSpan<=0)return null;
-  // Least-squares slope (%/day) over all snapshots — a 1-2 day plateau won't tank the trend
+  // Least-squares slope (%/day) over the window — a 1-2 day plateau won't tank the trend
   var t0=new Date(first.date).getTime();
-  var xs=h.map(function(p){return (new Date(p.date).getTime()-t0)/86400000;});
-  var n=h.length, sx=0,sy=0,sxx=0,sxy=0;
-  for(var i=0;i<n;i++){var x=xs[i],y=h[i].value;sx+=x;sy+=y;sxx+=x*x;sxy+=x*y;}
+  var xs=win.map(function(p){return (new Date(p.date).getTime()-t0)/86400000;});
+  var n=win.length, sx=0,sy=0,sxx=0,sxy=0;
+  for(var i=0;i<n;i++){var x=xs[i],y=win[i].value;sx+=x;sy+=y;sxx+=x*x;sxy+=x*y;}
   var denom=(n*sxx-sx*sx);
   var slope=denom!==0?(n*sxy-sx*sy)/denom:0;
-  // Overall average rate as a sanity floor (handles short, sparse histories)
+  // Average rate over the same window as a sanity floor (handles short, sparse windows)
   var avgRate=(last.value-first.value)/totalSpan;
   var rate=Math.max(slope,avgRate);
   // Only call it truly stalled if there has been essentially no net progress across a meaningful span
